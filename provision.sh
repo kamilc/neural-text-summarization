@@ -3,4 +3,5 @@
 apt-get upate
 apt-get install unzip
 
-conda install -y jupyterlab hypothesis pandas
+conda install -y jupyterlab hypothesis pandas transformers conda-forge spacy
+python -m spacy download en_core_web_lg scikit-learn
