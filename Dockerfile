@@ -1,26 +1,29 @@
-# FROM curlimages/curl:7.68.0 as curl
+FROM nvidia/cuda:10.2-cudnn7-devel
 
-# WORKDIR /home/nlp
 
-# RUN curl -L#O https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json && \
-#     curl -L#O https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json
+## FROM curlimages/curl:7.68.0 as curl
 
-FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
+## WORKDIR /home/nlp
 
-WORKDIR /home/nlp
+## RUN curl -L#O https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json && \
+##     curl -L#O https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json
 
-# COPY --from=curl https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json /home/nlp/train-v2.0.json
-# COPY --from=curl https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json /home/nlp/dev-v2.0.json
+#FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
 
-# COPY https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json /home/nlp/train-v2.0.json
-# COPY https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json /home/nlp/dev-v2.0.json
+#WORKDIR /home/nlp
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg git cmake
+## COPY --from=curl https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json /home/nlp/train-v2.0.json
+## COPY --from=curl https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json /home/nlp/dev-v2.0.json
 
-EXPOSE 8123
+## COPY https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json /home/nlp/train-v2.0.json
+## COPY https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json /home/nlp/dev-v2.0.json
 
-#RUN free -h
-#RUN conda install -y hypothesis jupyterlab
+#RUN apt-get update && \
+#    apt-get install -y ffmpeg git cmake
 
-#ENTRYPOINT jupyter notebook --notebook-dir=/home/nlp --ip 0.0.0.0 --no-browser --allow-root --port=8123
+#EXPOSE 8123
+
+##RUN free -h
+##RUN conda install -y hypothesis jupyterlab
+
+##ENTRYPOINT jupyter notebook --notebook-dir=/home/nlp --ip 0.0.0.0 --no-browser --allow-root --port=8123
