@@ -9,6 +9,7 @@ from summarize.text_to_parsed_doc import TextToParsedDoc
 from summarize.words_to_vectors import WordsToVectors
 from summarize.add_noise_to_embeddings import AddNoiseToEmbeddings
 from summarize.set_all_to_summarizing import SetAllToSummarizing
+from summarize.words_to_ids import WordsToIds
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
@@ -31,6 +32,7 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
+                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(self.probability_of_mask_for_word),
                     MergeBatch(self.device)
                 ]
@@ -41,6 +43,7 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
+                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(0),
                     SetAllToSummarizing(),
                     MergeBatch(self.device)
@@ -52,6 +55,7 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
+                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(0),
                     MergeBatch(self.device)
                 ]
@@ -74,16 +78,12 @@ class Trainer(BaseTrainer):
 
 
     def work_batch(self, batch):
-        word_embeddings, discriminate_probs = self.model(
+        logits, discriminate_probs = self.model(
             batch.noisy_word_embeddings,
             batch.mode
         )
 
-        # we're diverging from the article here by outputting the word embeddings
-        # instead of the probabilities for each word in a vocabulary
-        # our loss function is using the cosine embedding loss coupled with
-        # the discriminator loss:
         return (
-            self.compute_loss(word_embeddings, batch.word_embeddings, discriminate_probs),
+            self.compute_loss(logits, batch.word_embeddings, discriminate_probs),
             word_embeddings
         )

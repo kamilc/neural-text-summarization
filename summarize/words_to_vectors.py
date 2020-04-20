@@ -16,7 +16,6 @@ class WordsToVectors(object):
         )
 
     def __call__(self, sample):
-
         sample['word_embeddings'] = sample.swifter.progress_bar(False).apply(
             lambda row: self.document_embeddings(row['doc']),
             axis=1

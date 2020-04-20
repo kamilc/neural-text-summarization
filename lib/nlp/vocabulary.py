@@ -41,6 +41,10 @@ class Vocabulary(object):
     def __len__(self):
         return len(self.words)
 
+    def word_to_id(self, word):
+        spacy_id = self.nlp.vocab[word].orth
+        return self.index[spacy_id] - 1
+
     def decode(self, probs):
         """
         probs: BxSxV tensor where:
