@@ -3,3 +3,6 @@ data
 tmp/
 runs
 .hypothesis/
+*.pyc
+__pycache__/
+*.py[cod]
