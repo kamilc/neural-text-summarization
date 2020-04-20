@@ -1,7 +1,9 @@
 from cached_property import cached_property
+import torch
 from pathlib import Path
 
 from lib.batch import Batch
+from lib.update_info import UpdateInfo
 from lib.dataloading.dataloader import DataLoader
 
 class BaseTrainer:
@@ -28,6 +30,7 @@ class BaseTrainer:
         if self.has_checkpoint:
             self.load_last_checkpoint()
 
+    @property
     def model_class(self):
         pass
 

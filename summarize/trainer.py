@@ -1,4 +1,6 @@
 from cached_property import cached_property
+import torch
+import torch.nn.functional as F
 
 from lib.base_trainer import BaseTrainer
 from lib.nlp.decoder import Decoder
@@ -19,6 +21,7 @@ class Trainer(BaseTrainer):
         self.probability_of_mask_for_word = probability_of_mask_for_word
         self.decoder = Decoder(vocabulary)
 
+    @property
     def model_class(self):
         return SummarizeNet
 
@@ -72,14 +75,13 @@ class Trainer(BaseTrainer):
 
         return embeddings_loss + discriminator_loss
 
-
     def work_batch(self, batch):
-        logits, discriminate_probs = self.model(
+        word_embeddings, discriminate_probs = self.model(
             batch.noisy_word_embeddings,
             batch.mode
         )
 
         return (
-            self.compute_loss(logits, batch.word_embeddings, discriminate_probs),
+            self.compute_loss(word_embeddings, batch.word_embeddings, discriminate_probs),
             word_embeddings
         )

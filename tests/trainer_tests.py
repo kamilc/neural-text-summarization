@@ -35,8 +35,6 @@ class TestTrainer(unittest.TestCase):
                     'hidden_size': 128,
                     'input_size': 300,
                     'num_layers': 2,
-                    'cutoffs': [1, 2],
-                    'vocabulary_size': len(vocabulary)
                 },
                 optimizer_args={},
                 batch_size=32,
@@ -50,3 +48,31 @@ class TestTrainer(unittest.TestCase):
                 for batch in itertools.islice(trainer.batches(mode), 10)
             ]
             self.assertEqual(list(ixs), list(range(1, 11)))
+
+    def test_text_decoding_from_embeddings_work(self):
+        vocabulary = Vocabulary(nlp, [ articles["text"], articles["headline"] ])
+
+        trainer = Trainer(
+            name='unit-test-run-1',
+            vocabulary=vocabulary,
+            dataframe=articles,
+            optimizer_class_name='Adam',
+            model_args={
+                'hidden_size': 128,
+                'input_size': 300,
+                'num_layers': 2,
+            },
+            optimizer_args={},
+            batch_size=32,
+            update_every=1,
+            probability_of_mask_for_word=0.3,
+            device=torch.device('cpu')
+        )
+
+        update_info = next(trainer.updates("train"))
+
+        print(update_info.decoded_inferred_texts)
+
+        self.assertNotEqual(update_info.decoded_inferred_texts, "")
+        self.assertIsNotNone(update_info.decoded_inferred_texts)
+

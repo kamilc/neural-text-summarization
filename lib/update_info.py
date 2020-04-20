@@ -1,3 +1,4 @@
+from cached_property import cached_property
 from lib.metrics import Metrics
 
 class UpdateInfo(object):
