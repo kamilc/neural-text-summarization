@@ -9,7 +9,6 @@ from summarize.text_to_parsed_doc import TextToParsedDoc
 from summarize.words_to_vectors import WordsToVectors
 from summarize.add_noise_to_embeddings import AddNoiseToEmbeddings
 from summarize.set_all_to_summarizing import SetAllToSummarizing
-from summarize.words_to_ids import WordsToIds
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
@@ -32,7 +31,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
-                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(self.probability_of_mask_for_word),
                     MergeBatch(self.device)
                 ]
@@ -43,7 +41,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
-                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(0),
                     SetAllToSummarizing(),
                     MergeBatch(self.device)
@@ -55,7 +52,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
-                    WordsToIds(self.vocabulary),
                     AddNoiseToEmbeddings(0),
                     MergeBatch(self.device)
                 ]

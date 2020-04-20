@@ -4,12 +4,11 @@ from lib.nnmodel import NNModel
 from summarize.discriminator_net import DiscriminatorNet
 
 class SummarizeNet(NNModel):
-    def __init__(self, hidden_size, input_size, num_layers, vocabulary_size):
+    def __init__(self, hidden_size, input_size, num_layers):
         super(SummarizeNet, self).__init__(
             hidden_size=hidden_size,
             input_size=input_size,
             num_layers=num_layers,
-            vocabulary_size=vocabulary_size
         )
 
         self.hidden_size = hidden_size
@@ -30,7 +29,7 @@ class SummarizeNet(NNModel):
             bidirectional=True
         )
 
-        self.decode_linear = nn.Linear(input_size*2, vocabulary_size)
+        self.decode_linear = nn.Linear(input_size*2, 300)
 
         self.discriminate = DiscriminatorNet(num_layers * 2 * input_size)
 
@@ -46,9 +45,9 @@ class SummarizeNet(NNModel):
         predicted, _ = self.encode_gru(word_embeddings)
         predicted = self.take_last_pass(predicted)
 
-        predicted_logits, state = self.decode_gru(predicted)
-        predicted_logits = self.decode_linear(predicted_logits)
+        predicted_embeddings, state = self.decode_gru(predicted)
+        predicted_embeddings = self.decode_linear(predicted_embeddings)
 
         predicted_modes = self.discriminate(state)
 
-        return predicted_logits, predicted_modes
+        return predicted_embeddings, predicted_modes

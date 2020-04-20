@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import numpy as np
 
 class MergeBatch(object):
@@ -16,14 +15,6 @@ class MergeBatch(object):
             ]
         )
 
-    def pad_word_ids(self, word_ids):
-        max_len = max([ ids.shape[0] for ids in word_ids ])
-
-        return [
-            F.pad(ids, (0, 0, max_len - ids.shape[0], 0), mode='constant', value=0)
-            for ids in word_ids
-        ]
-
     def __call__(self, sample):
         del sample['doc']
 
@@ -34,12 +25,6 @@ class MergeBatch(object):
                 sample['word_embeddings']
             ).astype(np.float32, copy=False)
         ).to(self.device)
-
-        sample['word_ids'] = torch.stack(
-            self.pad_word_ids(
-                sample['word_ids']
-            )
-        )
 
         if 'noisy_word_embeddings' in sample:
             sample['noisy_word_embeddings'] = torch.from_numpy(
