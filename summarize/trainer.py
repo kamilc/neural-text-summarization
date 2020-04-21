@@ -14,12 +14,12 @@ from summarize.set_all_to_summarizing import SetAllToSummarizing
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
-    def __init__(self, vocabulary, probability_of_mask_for_word, *args, **kwargs):
+    def __init__(self, nlp, probability_of_mask_for_word, *args, **kwargs):
         super(Trainer, self).__init__(*args, **kwargs)
 
-        self.vocabulary = vocabulary
+        self.nlp = nlp
         self.probability_of_mask_for_word = probability_of_mask_for_word
-        self.decoder = Decoder(vocabulary)
+        self.decoder = Decoder(nlp, self.device)
 
     @property
     def model_class(self):
@@ -32,8 +32,8 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "train",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
+                    TextToParsedDoc(self.nlp),
+                    WordsToVectors(self.nlp),
                     AddNoiseToEmbeddings(self.probability_of_mask_for_word),
                     MergeBatch(self.device)
                 ]
@@ -42,8 +42,8 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "test",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
+                    TextToParsedDoc(self.nlp),
+                    WordsToVectors(self.nlp),
                     AddNoiseToEmbeddings(0),
                     SetAllToSummarizing(),
                     MergeBatch(self.device)
@@ -53,8 +53,8 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "val",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
+                    TextToParsedDoc(self.nlp),
+                    WordsToVectors(self.nlp),
                     AddNoiseToEmbeddings(0),
                     MergeBatch(self.device)
                 ]

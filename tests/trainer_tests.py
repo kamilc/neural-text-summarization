@@ -12,7 +12,6 @@ import numpy as np
 import random
 from summarize.summarize_net import SummarizeNet
 from summarize.trainer import Trainer
-from lib.nlp.vocabulary import Vocabulary
 
 nlp = spacy.load(
     "en_core_web_lg",
@@ -23,12 +22,10 @@ articles = pd.read_parquet("data/articles-processed.parquet.gzip")
 
 class TestTrainer(unittest.TestCase):
     def test_trainer_batches_yields_proper_ixs(self):
-        vocabulary = Vocabulary(nlp, [ articles["text"], articles["headline"] ])
-
         for mode in ['train', 'test', 'val']:
             trainer = Trainer(
                 name='unit-test-run-1',
-                vocabulary=vocabulary,
+                nlp=nlp,
                 dataframe=articles,
                 optimizer_class_name='Adam',
                 model_args={
@@ -50,11 +47,9 @@ class TestTrainer(unittest.TestCase):
             self.assertEqual(list(ixs), list(range(1, 11)))
 
     def test_text_decoding_from_embeddings_work(self):
-        vocabulary = Vocabulary(nlp, [ articles["text"], articles["headline"] ])
-
         trainer = Trainer(
             name='unit-test-run-1',
-            vocabulary=vocabulary,
+            nlp=nlp,
             dataframe=articles,
             optimizer_class_name='Adam',
             model_args={
@@ -66,13 +61,18 @@ class TestTrainer(unittest.TestCase):
             batch_size=32,
             update_every=1,
             probability_of_mask_for_word=0.3,
-            device=torch.device('cpu')
+            device=torch.device('cuda')
         )
 
         update_info = next(trainer.updates("train"))
+        inferred_text = next(update_info.decoded_inferred_texts)
 
-        print(update_info.decoded_inferred_texts)
+        self.assertNotEqual(inferred_text, "")
+        self.assertIsNotNone(inferred_text)
 
-        self.assertNotEqual(update_info.decoded_inferred_texts, "")
-        self.assertIsNotNone(update_info.decoded_inferred_texts)
-
+if __name__ == '__main__':
+    doctest.testmod()
+    unittest.main(
+        failfast=True,
+        buffer=False
+    )

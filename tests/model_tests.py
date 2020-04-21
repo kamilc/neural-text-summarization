@@ -42,3 +42,10 @@ class TestModel(unittest.TestCase):
         self.assertEqual(pred_modes.shape[1], 1)
         self.assertEqual(len(pred_modes.shape), 2)
 
+
+if __name__ == '__main__':
+    doctest.testmod()
+    unittest.main(
+        failfast=True,
+        buffer=False
+    )
