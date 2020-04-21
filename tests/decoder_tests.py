@@ -9,19 +9,20 @@ import spacy
 from lib.nlp.decoder import Decoder
 from summarize.words_to_vectors import WordsToVectors
 
-nlp = spacy.load(
-    "en_core_web_lg",
-    disable=["tagger", "ner", "textcat"]
-)
+from tests.support import Support
+
+support = Support()
 
 class TestDecoder(unittest.TestCase):
     def test_decoding_works(self):
         device = torch.device('cuda')
-        words_to_vectors = WordsToVectors(nlp)
-        decoder = Decoder(nlp, device)
+        words_to_vectors = WordsToVectors(support.nlp)
+        decoder = Decoder(support.nlp, device)
 
         text = "this seems to work just fine"
-        word_embeddings = words_to_vectors.document_embeddings(nlp(text))
+        word_embeddings = words_to_vectors.document_embeddings(
+            support.nlp(text)
+        )
 
         inferred = decoder.decode_embeddings(
             torch.from_numpy(word_embeddings).unsqueeze(0).to(device=device)

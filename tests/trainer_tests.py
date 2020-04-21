@@ -7,26 +7,22 @@ import hypothesis.extra.numpy as npst
 import itertools
 import torch
 import spacy
-import pandas as pd
 import numpy as np
 import random
 from summarize.summarize_net import SummarizeNet
 from summarize.trainer import Trainer
 
-nlp = spacy.load(
-    "en_core_web_lg",
-    disable=["tagger", "ner", "textcat"]
-)
+from tests.support import Support
 
-articles = pd.read_parquet("data/articles-processed.parquet.gzip")
+support = Support()
 
 class TestTrainer(unittest.TestCase):
     def test_trainer_batches_yields_proper_ixs(self):
         for mode in ['train', 'test', 'val']:
             trainer = Trainer(
                 name='unit-test-run-1',
-                nlp=nlp,
-                dataframe=articles,
+                nlp=support.nlp,
+                dataframe=support.articles,
                 optimizer_class_name='Adam',
                 model_args={
                     'hidden_size': 128,
@@ -49,8 +45,8 @@ class TestTrainer(unittest.TestCase):
     def test_text_decoding_from_embeddings_work(self):
         trainer = Trainer(
             name='unit-test-run-1',
-            nlp=nlp,
-            dataframe=articles,
+            nlp=support.nlp,
+            dataframe=support.articles,
             optimizer_class_name='Adam',
             model_args={
                 'hidden_size': 128,
