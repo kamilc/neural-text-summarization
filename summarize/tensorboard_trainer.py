@@ -1,13 +1,15 @@
 from torch.utils.tensorboard import SummaryWriter
 from cached_property import cached_property
+from summarize.trainer import Trainer
+from lib.metrics import Metrics
 
 class TensorboardTrainer(Trainer):
     def __init__(self, *args, **kwargs):
-        super(SummarizeTrainer, self).__init__(*args, **kwargs)
+        super(TensorboardTrainer, self).__init__(*args, **kwargs)
 
         self.writer = SummaryWriter(comment=self.name)
 
-    def train(self, evaluate_every=1000):
+    def train(self, evaluate_every=100):
         test_updates = self.test_updates()
 
         cumulative_train_metrics = Metrics.empty(mode="train")
@@ -17,7 +19,7 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
-                print(f"{update_info.batch.ix}")
+                print(f"{update_info.batch.ix} => {update_info.metrics.loss}")
 
                 self.writer.add_scalar(
                     'loss/train',
@@ -35,18 +37,23 @@ class TensorboardTrainer(Trainer):
                 )
 
                 print(f"Eval: {update_info.metrics.loss}")
+
+            if update_info.batch.ix % 200 == 0 and update_info.batch.ix != 0:
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
 
-#             if update_info.batch.ix % 1000 == 0 and update_info.batch.ix != 0:
-#                 test_update = next(test_updates)
+            if update_info.batch.ix % 1000 == 0 and update_info.batch.ix != 0:
+                test_update = next(test_updates)
 
-#                 self.test_texts_stream.write(
-#                     (
-#                         update_info.batch.text,
-#                         update_info.decoded_inferred_texts
-#                     )
-#                 )
+                text = next(update_info.decoded_inferred_texts)
+
+                print(f"TEST at {update_info.batch.ix} text:\n{text}")
+
+                self.writer.add_text(
+                    'test/text',
+                    text,
+                    update_info.batch.ix
+                )
 
     def test(self):
         cumulative_metrics = Metrics.empty(mode="test")

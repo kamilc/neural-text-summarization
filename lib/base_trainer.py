@@ -1,5 +1,6 @@
 from cached_property import cached_property
 import torch
+import os
 from pathlib import Path
 
 from lib.batch import Batch
@@ -157,7 +158,8 @@ class BaseTrainer:
             yield(update_info)
 
             if update_info.batch.ix != 0 and update_info.batch.ix % evaluate_every == 0:
-                yield(next(evaluate_updates))
+                for _ in range(0, 10):
+                    yield(next(evaluate_updates))
 
     def test_updates(self):
         return self.updates(mode="test", update_every=1)
