@@ -7,7 +7,7 @@ class TensorboardTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super(TensorboardTrainer, self).__init__(*args, **kwargs)
 
-        self.writer = SummaryWriter(comment=self.name)
+        self.writer = SummaryWriter(log_dir=f"runs/{self.name}")
 
     def train(self, evaluate_every=100):
         test_updates = self.test_updates()

@@ -4,11 +4,12 @@ import torch.nn.functional as F
 from lib.nnmodel import NNModel
 
 class SummarizeNet(NNModel):
-    def __init__(self, hidden_size, input_size, num_heads, num_layers, dropout_rate):
+    def __init__(self, hidden_size, input_size, num_heads, dim_feedforward_transformer, num_layers, dropout_rate):
         super(SummarizeNet, self).__init__(
             hidden_size=hidden_size,
             input_size=input_size,
             num_heads=num_heads,
+            dim_feedforward_transformer=dim_feedforward_transformer,
             num_layers=num_layers,
             dropout_rate=dropout_rate
         )
@@ -20,7 +21,12 @@ class SummarizeNet(NNModel):
         self.encode_modes = nn.Linear(1, input_size)
         self.batch_norm = nn.BatchNorm1d(hidden_size)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=input_size, nhead=num_heads)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=input_size,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward_transformer
+        )
+
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.encode_linear = nn.Linear(input_size + 1, hidden_size)
 

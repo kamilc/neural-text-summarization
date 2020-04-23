@@ -27,6 +27,7 @@ class TestModel(unittest.TestCase):
             hidden_size=hidden_size,
             input_size=300,
             num_heads=10,
+            dim_feedforward_transformer=128,
             num_layers=num_layers,
             dropout_rate=dropout_rate
         )

@@ -29,7 +29,8 @@ class TestTrainer(unittest.TestCase):
                     'input_size': 300,
                     'num_layers': 2,
                     'num_heads': 10,
-                    'dropout_rate': 0.2
+                    'dropout_rate': 0.2,
+                    'dim_feedforward_transformer': 128
                 },
                 optimizer_args={},
                 batch_size=32,
@@ -54,7 +55,8 @@ class TestTrainer(unittest.TestCase):
                 'input_size': 300,
                 'num_layers': 2,
                 'num_heads': 10,
-                'dropout_rate': 0.2
+                'dropout_rate': 0.2,
+                'dim_feedforward_transformer': 128
             },
             optimizer_args={},
             batch_size=32,
