@@ -19,13 +19,16 @@ class TestModel(unittest.TestCase):
         st.sampled_from([100, 200]),
         st.sampled_from([32, 64, 128]),
         st.sampled_from([1, 2, 3]),
+        st.floats(min_value=0, max_value=1)
     )
     @settings(max_examples=10, deadline=1000)
-    def test_summarize_net_returns_correct_shapes(self, batch_size, seq_len, hidden_size, num_layers):
+    def test_summarize_net_returns_correct_shapes(self, batch_size, seq_len, hidden_size, num_layers, dropout_rate):
         model = SummarizeNet(
             hidden_size=hidden_size,
             input_size=300,
+            num_heads=10,
             num_layers=num_layers,
+            dropout_rate=dropout_rate
         )
 
         embeddings = torch.rand((batch_size, seq_len, 300))

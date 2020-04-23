@@ -9,16 +9,14 @@ from summarize.summarize_net import SummarizeNet
 from summarize.articles_dataset import ArticlesDataset
 from summarize.text_to_parsed_doc import TextToParsedDoc
 from summarize.words_to_vectors import WordsToVectors
-from summarize.add_noise_to_embeddings import AddNoiseToEmbeddings
 from summarize.set_all_to_summarizing import SetAllToSummarizing
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
-    def __init__(self, nlp, probability_of_mask_for_word, *args, **kwargs):
+    def __init__(self, nlp, *args, **kwargs):
         super(Trainer, self).__init__(*args, **kwargs)
 
         self.nlp = nlp
-        self.probability_of_mask_for_word = probability_of_mask_for_word
         self.decoder = Decoder(nlp, self.device)
 
     @property
@@ -34,7 +32,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.nlp),
                     WordsToVectors(self.nlp),
-                    AddNoiseToEmbeddings(self.probability_of_mask_for_word),
                     MergeBatch(self.device)
                 ]
             ),
@@ -44,7 +41,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.nlp),
                     WordsToVectors(self.nlp),
-                    AddNoiseToEmbeddings(0),
                     SetAllToSummarizing(),
                     MergeBatch(self.device)
                 ]
@@ -55,7 +51,6 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.nlp),
                     WordsToVectors(self.nlp),
-                    AddNoiseToEmbeddings(0),
                     MergeBatch(self.device)
                 ]
             )
@@ -77,7 +72,7 @@ class Trainer(BaseTrainer):
 
     def work_batch(self, batch):
         word_embeddings, discriminate_probs = self.model(
-            batch.noisy_word_embeddings,
+            batch.word_embeddings,
             batch.mode
         )
 

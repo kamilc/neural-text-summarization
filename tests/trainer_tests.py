@@ -28,11 +28,12 @@ class TestTrainer(unittest.TestCase):
                     'hidden_size': 128,
                     'input_size': 300,
                     'num_layers': 2,
+                    'num_heads': 10,
+                    'dropout_rate': 0.2
                 },
                 optimizer_args={},
                 batch_size=32,
                 update_every=1,
-                probability_of_mask_for_word=0.3,
                 device=torch.device('cpu')
             )
             self.assertGreater(len(trainer.datasets[mode]), 0)
@@ -52,11 +53,12 @@ class TestTrainer(unittest.TestCase):
                 'hidden_size': 128,
                 'input_size': 300,
                 'num_layers': 2,
+                'num_heads': 10,
+                'dropout_rate': 0.2
             },
             optimizer_args={},
             batch_size=32,
             update_every=1,
-            probability_of_mask_for_word=0.3,
             device=torch.device('cuda')
         )
 
