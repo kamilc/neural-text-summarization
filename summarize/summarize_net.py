@@ -1,7 +1,9 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from lib.nnmodel import NNModel
+from lib.nlp.positional_encoding import PositionalEncoding
 
 class SummarizeNet(NNModel):
     def __init__(self, hidden_size, input_size, num_heads, dim_feedforward_transformer, num_layers, dropout_rate):
@@ -15,7 +17,9 @@ class SummarizeNet(NNModel):
         )
 
         self.hidden_size = hidden_size
+        self.input_size = input_size
 
+        self.pos_encoder = PositionalEncoding(input_size)
         self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
 
         self.encode_modes = nn.Linear(1, input_size)
@@ -42,7 +46,9 @@ class SummarizeNet(NNModel):
         self.discriminate = nn.Linear(hidden_size, 1)
 
     def forward(self, word_embeddings, modes):
-        noisy_embeddings = self.dropout(word_embeddings)
+        noisy_embeddings = word_embeddings * math.sqrt(self.input_size)
+        noisy_embeddings = self.pos_encoder(noisy_embeddings)
+        noisy_embeddings = self.dropout(noisy_embeddings)
 
         batch_size, seq_len, _ = word_embeddings.shape
 

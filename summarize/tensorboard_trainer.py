@@ -19,12 +19,12 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
-                print(f"{update_info.batch.ix} => {update_info.metrics.loss}")
+                print(f"{update_info.batch.ix} => {cumulative_train_metrics.running_mean_loss()}")
 
                 if update_info.batch.ix % 20 == 0:
                     self.writer.add_scalar(
                         'loss/train',
-                        update_info.metrics.loss,
+                        cumulative_train_metrics.running_mean_loss(),
                         update_info.batch.ix
                     )
 

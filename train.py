@@ -17,7 +17,7 @@ if 'articles' not in vars():
     print(f"done")
 
 trainer = TensorboardTrainer(
-    name='run-7',
+    name='run-8',
     nlp=nlp,
     dataframe=articles,
     optimizer_class_name='Adam',

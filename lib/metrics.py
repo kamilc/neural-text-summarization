@@ -21,7 +21,7 @@ class Metrics(object):
     def last_loss(self):
         return self.losses[len(self.losses) - 1]
 
-    def running_mean_loss(self, num=100):
+    def running_mean_loss(self, num=1000):
         return statistics.mean(self.losses[len(self.losses)-num:])
 
     def __add__(self, other):
