@@ -27,10 +27,17 @@ class SummarizeNet(NNModel):
             dim_feedforward=dim_feedforward_transformer
         )
 
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.encode_linear = nn.Linear(input_size + 1, hidden_size)
+        decoder_layer = nn.TransformerEncoderLayer(
+            d_model=input_size,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward_transformer
+        )
 
-        self.decode = nn.Linear(hidden_size, input_size)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.transformer_decoder = nn.TransformerEncoder(decoder_layer, num_layers=num_layers)
+
+        self.encode_linear = nn.Linear(input_size + 1, hidden_size)
+        self.pre_decode = nn.Linear(hidden_size, input_size)
 
         self.discriminate = nn.Linear(hidden_size, 1)
 
@@ -44,17 +51,18 @@ class SummarizeNet(NNModel):
         encoded = self.transformer_encoder(noisy_embeddings)
         encoded = torch.cat([encoded, expanded_modes], dim=2)
 
-        encoded = F.tanh(
+        encoded = torch.tanh(
             self.encode_linear(encoded)
         )
 
         encoded = self.batch_norm(encoded.transpose(2, 1)).transpose(2, 1)
 
-        predicted_modes = F.sigmoid(
+        predicted_modes = torch.sigmoid(
             self.discriminate(encoded).mean(dim=1)
         )
 
-        decoded = self.decode(encoded)
+        decoded = self.pre_decode(encoded)
+        decoded = self.transformer_decoder(decoded)
         decoded = F.normalize(decoded, dim=2)
 
         return decoded, predicted_modes

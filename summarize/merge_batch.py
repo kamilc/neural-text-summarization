@@ -20,18 +20,13 @@ class MergeBatch(object):
 
         sample = sample.to_dict(orient="list")
 
+        sample['list_word_embeddings'] = sample['word_embeddings']
+
         sample['word_embeddings'] = torch.from_numpy(
             self.stack_vectors(
                 sample['word_embeddings']
             ).astype(np.float32, copy=False)
         ).to(self.device)
-
-        if 'noisy_word_embeddings' in sample:
-            sample['noisy_word_embeddings'] = torch.from_numpy(
-                self.stack_vectors(
-                    sample['noisy_word_embeddings']
-                ).astype(np.float32, copy=False)
-            ).to(self.device)
 
         sample['mode'] = torch.from_numpy(
             np.stack(

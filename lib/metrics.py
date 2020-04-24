@@ -21,9 +21,8 @@ class Metrics(object):
     def last_loss(self):
         return self.losses[len(self.losses) - 1]
 
-    def running_mean_loss(self, n=100):
-        cumsum = np.cumsum(np.insert(np.array(self.losses), 0, 0))
-        return (cumsum[n:] - cumsum[:-n]) / float(n)
+    def running_mean_loss(self, num=100):
+        return statistics.mean(self.losses[len(self.losses)-num:])
 
     def __add__(self, other):
         self.losses += other.losses

@@ -56,7 +56,7 @@ class Trainer(BaseTrainer):
             )
         }
 
-    def compute_loss(self, word_embeddings, original_word_embeddings, discriminate_probs):
+    def compute_loss(self, word_embeddings, original_word_embeddings, discriminate_probs, original_modes):
         embeddings_loss = F.cosine_embedding_loss(
           word_embeddings.reshape((-1, word_embeddings.shape[2])),
           original_word_embeddings.reshape((-1, original_word_embeddings.shape[2])),
@@ -65,10 +65,10 @@ class Trainer(BaseTrainer):
 
         discriminator_loss = F.binary_cross_entropy(
             discriminate_probs,
-            torch.zeros_like(discriminate_probs).to(self.device)
+            original_modes
         )
 
-        return embeddings_loss + discriminator_loss
+        return embeddings_loss # + discriminator_loss
 
     def work_batch(self, batch):
         word_embeddings, discriminate_probs = self.model(
@@ -77,6 +77,6 @@ class Trainer(BaseTrainer):
         )
 
         return (
-            self.compute_loss(word_embeddings, batch.word_embeddings, discriminate_probs),
+            self.compute_loss(word_embeddings, batch.word_embeddings, discriminate_probs, batch.mode),
             word_embeddings
         )
