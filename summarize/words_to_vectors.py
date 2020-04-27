@@ -21,4 +21,9 @@ class WordsToVectors(object):
             axis=1
         )
 
+        sample['word_embeddings_len'] = sample.apply(
+            lambda row: row['word_embeddings'].shape[0],
+            axis=1
+        )
+
         return sample

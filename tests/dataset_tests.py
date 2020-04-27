@@ -6,6 +6,7 @@ import hypothesis.extra.numpy as npst
 
 import torch
 import torch.nn.functional as F
+import pandas as pd
 
 from lib.batch import Batch
 from lib.dataloading.dataloader import DataLoader
@@ -21,6 +22,38 @@ from tests.support import Support
 support = Support()
 
 class TestDataset(unittest.TestCase):
+    def test_word_to_vectors_add_length(self):
+        text = "this is a sample text"
+        dataframe = pd.DataFrame(
+            {
+                'doc': [support.nlp(text)],
+                'text': text,
+                'headline': text,
+                'normalized_title': 'HowToStealTheMoon',
+                'set': ['train']
+            }
+        )
+        dataset = ArticlesDataset(
+            dataframe,
+            "train",
+            transforms=[
+                TextToParsedDoc(support.nlp),
+                WordsToVectors(support.nlp),
+                MergeBatch(torch.device("cuda"))
+            ]
+        )
+
+        loader = DataLoader(
+            dataset,
+            batch_size=1
+        )
+
+        for batch in loader:
+            self.assertEqual(batch['word_embeddings_len'].shape[0], 1)
+            self.assertEqual(batch['word_embeddings_len'].cpu().item(), 9)
+
+            break
+
     def test_modes_are_assigned_correctly(self):
         dataset = ArticlesDataset(
             support.articles,

@@ -34,4 +34,10 @@ class MergeBatch(object):
             ).astype(np.float32, copy=False)
         ).to(self.device)
 
+        sample['word_embeddings_len'] = torch.from_numpy(
+            np.stack(
+                sample['word_embeddings_len']
+            ).astype(np.float32, copy=False)
+        ).to(self.device)
+
         return sample

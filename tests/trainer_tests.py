@@ -25,15 +25,15 @@ class TestTrainer(unittest.TestCase):
                 dataframe=support.articles,
                 optimizer_class_name='Adam',
                 model_args={
-                    'hidden_size': 128,
+                    'hidden_size': 32,
                     'input_size': 300,
                     'num_layers': 2,
-                    'num_heads': 10,
+                    'num_heads': 2,
                     'dropout_rate': 0.2,
-                    'dim_feedforward_transformer': 128
+                    'dim_feedforward_transformer': 8
                 },
                 optimizer_args={},
-                batch_size=32,
+                batch_size=2,
                 update_every=1,
                 device=torch.device('cpu')
             )
@@ -51,15 +51,15 @@ class TestTrainer(unittest.TestCase):
             dataframe=support.articles,
             optimizer_class_name='Adam',
             model_args={
-                'hidden_size': 128,
+                'hidden_size': 32,
                 'input_size': 300,
                 'num_layers': 2,
-                'num_heads': 10,
+                'num_heads': 2,
                 'dropout_rate': 0.2,
-                'dim_feedforward_transformer': 128
+                'dim_feedforward_transformer': 8
             },
             optimizer_args={},
-            batch_size=32,
+            batch_size=2,
             update_every=1,
             device=torch.device('cuda')
         )

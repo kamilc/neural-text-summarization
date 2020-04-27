@@ -40,7 +40,7 @@ class BaseTrainer:
         try:
             return self.model_class.load(f"{self.checkpoint_path}/model.pth").to(self.device)
         except FileNotFoundError:
-            return self.model_class(**self.model_args).to(self.device)
+            return self.model_class(self.device, **self.model_args).to(self.device)
 
     @cached_property
     def optimizer(self):

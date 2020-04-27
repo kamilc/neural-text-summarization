@@ -17,20 +17,20 @@ if 'articles' not in vars():
     print(f"done")
 
 trainer = TensorboardTrainer(
-    name='run-8',
+    name='run-10',
     nlp=nlp,
     dataframe=articles,
     optimizer_class_name='Adam',
     model_args={
         'hidden_size': 300,
         'input_size': 300,
-        'num_layers': 4,
+        'num_layers': 6,
         'num_heads': 10,
         'dropout_rate': 0.2,
-        'dim_feedforward_transformer': 2048
+        'dim_feedforward_transformer': 3072
     },
     optimizer_args={},
-    batch_size=4,
+    batch_size=2,
     update_every=1,
     device=torch.device('cuda')
 )

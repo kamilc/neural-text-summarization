@@ -72,8 +72,9 @@ class Trainer(BaseTrainer):
 
     def work_batch(self, batch):
         word_embeddings, discriminate_probs = self.model(
-            batch.word_embeddings,
-            batch.mode
+            batch.word_embeddings.to(self.device),
+            batch.word_embeddings_len.to(self.device),
+            batch.mode.to(self.device)
         )
 
         return (

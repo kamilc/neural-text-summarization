@@ -21,9 +21,10 @@ class TestModel(unittest.TestCase):
         st.sampled_from([1, 2, 3]),
         st.floats(min_value=0, max_value=1)
     )
-    @settings(max_examples=10, deadline=1000)
+    @settings(max_examples=10, deadline=10000)
     def test_summarize_net_returns_correct_shapes(self, batch_size, seq_len, hidden_size, num_layers, dropout_rate):
         model = SummarizeNet(
+            device='cuda',
             hidden_size=hidden_size,
             input_size=300,
             num_heads=10,
@@ -32,10 +33,14 @@ class TestModel(unittest.TestCase):
             dropout_rate=dropout_rate
         )
 
-        embeddings = torch.rand((batch_size, seq_len, 300))
-        modes = torch.rand((batch_size))
+        embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
+        modes = torch.rand((batch_size)).cuda()
 
-        pred_embeddings, pred_modes = model(embeddings, modes)
+        pred_embeddings, pred_modes = model(
+            embeddings,
+            torch.from_numpy(np.random.choice(seq_len, batch_size)).cuda(),
+            modes
+        )
 
         self.assertEqual(pred_embeddings.shape[0], batch_size)
         self.assertEqual(pred_embeddings.shape[1], seq_len)
