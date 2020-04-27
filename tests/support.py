@@ -1,6 +1,7 @@
 import spacy
 import pandas as pd
 from cached_property import cached_property
+from lib.nlp.vocabulary import Vocabulary
 
 def singleton(class_):
     instances = {}
@@ -23,3 +24,7 @@ class Support(object):
     @cached_property
     def articles(self):
         return pd.read_parquet("data/articles-processed.parquet.gzip")
+
+    @cached_property
+    def vocabulary(self):
+        return Vocabulary(self.nlp, [self.articles.headline])

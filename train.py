@@ -16,8 +16,11 @@ if 'articles' not in vars():
     articles = pd.read_parquet("data/articles-processed.parquet.gzip")
     print(f"done")
 
+articles['length'] = articles.apply(lambda row: len(row['text']), axis=1)
+articles = articles[articles.length < 200]
+
 trainer = TensorboardTrainer(
-    name='run-10',
+    name='run-17',
     nlp=nlp,
     dataframe=articles,
     optimizer_class_name='Adam',
@@ -25,9 +28,9 @@ trainer = TensorboardTrainer(
         'hidden_size': 300,
         'input_size': 300,
         'num_layers': 6,
-        'num_heads': 10,
+        'num_heads': 30,
         'dropout_rate': 0.2,
-        'dim_feedforward_transformer': 3072
+        'dim_feedforward_transformer': 1024
     },
     optimizer_args={},
     batch_size=2,

@@ -36,16 +36,14 @@ class TestModel(unittest.TestCase):
         embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
         modes = torch.rand((batch_size)).cuda()
 
-        pred_embeddings, pred_modes = model(
+        pred_logits, pred_modes = model(
             embeddings,
-            torch.from_numpy(np.random.choice(seq_len, batch_size)).cuda(),
             modes
         )
 
-        self.assertEqual(pred_embeddings.shape[0], batch_size)
-        self.assertEqual(pred_embeddings.shape[1], seq_len)
-        self.assertEqual(pred_embeddings.shape[2], 300)
-        self.assertEqual(len(pred_embeddings.shape), 3)
+        self.assertEqual(pred_logits.shape[0], batch_size)
+        self.assertEqual(pred_logits.shape[1], len(vocabulary))
+        self.assertEqual(len(pred_logits.shape), 2)
 
         self.assertEqual(pred_modes.shape[0], batch_size)
         self.assertEqual(pred_modes.shape[1], 1)

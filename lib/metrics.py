@@ -10,6 +10,9 @@ class Metrics(object):
     def empty(cls, mode):
         return cls(mode)
 
+    def __len__(self):
+        return len(self.losses)
+
     @property
     def loss(self):
         if len(self.losses) == 0:

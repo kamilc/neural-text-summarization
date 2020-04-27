@@ -55,39 +55,42 @@ class SummarizeNet(NNModel):
         self.to(self.device)
 
     def forward(self, word_embeddings, word_embeddings_len, modes):
-        noisy_embeddings = word_embeddings * math.sqrt(self.input_size)
-        noisy_embeddings = self.pos_encoder(noisy_embeddings)
-        noisy_embeddings = self.dropout(noisy_embeddings)
-
         batch_size, seq_len, _ = word_embeddings.shape
-
         expanded_modes = modes.unsqueeze(1).unsqueeze(1).expand(batch_size, seq_len, 1)
+
+        noisy_embeddings = word_embeddings.transpose(1,0) * math.sqrt(self.input_size)
+        noisy_embeddings = self.pos_encoder(noisy_embeddings)
+
+        #noisy_embeddings = self.dropout(noisy_embeddings)
+
+        # noisy_embeddings = torch.cat(
+        #     [
+        #         noisy_embeddings,
+        #         expanded_modes.transpose(1,0)
+        #     ],
+        #     dim=2
+        # )
 
         mask = torch.tril(torch.ones(seq_len, seq_len))
         mask.masked_fill(mask == 1, float('-inf'))
-        mask.requires_grad_(False).to(self.device)
-        mask = mask.to(self.device)
+        mask = mask.requires_grad_(False).to(self.device)
 
         encoded = self.transformer_encoder(
-            noisy_embeddings.transpose(1, 0),
+            noisy_embeddings,
             mask=mask
         )
-        encoded = torch.cat([encoded, expanded_modes.transpose(1,0)], dim=2)
 
-        encoded = torch.tanh(
-            self.encode_linear(encoded)
-        )
+        # predicted_modes = torch.sigmoid(
+        #     self.discriminate(encoded.transpose(1,0)).mean(dim=1)
+        # )
 
-        predicted_modes = torch.sigmoid(
-            self.discriminate(encoded.transpose(1,0)).mean(dim=1)
-        )
-
-        decoded = self.pre_decode(encoded)
+        # decoded = self.pre_decode(encoded)
         decoded = self.transformer_decoder(
             word_embeddings.transpose(1, 0),
-            decoded,
+            encoded,
+            tgt_mask=mask,
             memory_mask=mask
         )
         decoded = F.normalize(decoded, dim=2)
 
-        return decoded.transpose(1,0), predicted_modes
+        return decoded.transpose(1,0), modes.unsqueeze(1) # predicted_modes

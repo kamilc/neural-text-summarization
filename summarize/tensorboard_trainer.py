@@ -19,9 +19,9 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
-                print(f"{update_info.batch.ix} => {cumulative_train_metrics.running_mean_loss()}")
+                print(f"{update_info.batch.ix} => {update_info.metrics.loss} ({update_info.batch.word_embeddings.shape})") # {[ len(t) for t in update_info.batch.text ]}")
 
-                if update_info.batch.ix % 20 == 0:
+                if update_info.batch.ix % 100 == 0:
                     self.writer.add_scalar(
                         'loss/train',
                         cumulative_train_metrics.running_mean_loss(),
@@ -33,11 +33,13 @@ class TensorboardTrainer(Trainer):
             if update_info.from_evaluate:
                 cumulative_evaluate_metrics += update_info.metrics
 
-                self.writer.add_scalar(
-                    'loss/eval',
-                    update_info.metrics.loss,
-                    update_info.batch.ix
-                )
+                if len(cumulative_evaluate_metrics) == 10:
+                    self.writer.add_scalar(
+                        'loss/eval',
+                        cumulative_evaluate_metrics.loss,
+                        int(update_info.batch.ix / evaluate_every)
+                    )
+                    cumulative_evaluate_metrics = Metrics.empty(mode="eval")
 
                 print(f"Eval: {update_info.metrics.loss}")
 
