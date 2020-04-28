@@ -19,20 +19,9 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
-                #import pdb; pdb.set_trace()
-
-                #data = [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
-
-                #print(f"WEIGHTS = {data[[0]]}")
-
-                # self.writer.add_histogram(
-                #     'transformer_linear1',
-                #     [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
-                # )
-
                 print(f"{update_info.batch.ix} => {update_info.metrics.loss} ({update_info.batch.word_embeddings.shape})") # {[ len(t) for t in update_info.batch.text ]}")
 
-                if update_info.batch.ix % 100 == 0:
+                if update_info.batch.ix % 10 == 0:
                     self.writer.add_scalar(
                         'loss/train',
                         cumulative_train_metrics.running_mean_loss(),
@@ -54,16 +43,16 @@ class TensorboardTrainer(Trainer):
 
                 print(f"Eval: {update_info.metrics.loss}")
 
-            if update_info.batch.ix % 200 == 0 and update_info.batch.ix != 0:
+            if update_info.batch.ix % 100 == 0 and update_info.batch.ix != 0:
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
 
-            if update_info.batch.ix % 1000 == 0 and update_info.batch.ix != 0:
+            if update_info.batch.ix % 100 == 0 and update_info.batch.ix != 0:
                 test_update = next(test_updates)
 
                 text = next(update_info.decoded_inferred_texts)
 
-                print(f"TEST at {update_info.batch.ix} text:\n{text}")
+                print(f"TEST at {update_info.batch.ix}\n\tORIGINAL:\n\t{update_info.batch.text[0].strip().lower()} \tPREDICTED SUMMARY:\n\t{text}")
 
                 self.writer.add_text(
                     'test/text',

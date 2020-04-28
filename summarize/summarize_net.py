@@ -100,10 +100,10 @@ class SummarizeNet(NNModel):
         batch_size, seq_len, _ = word_embeddings.shape
         expanded_modes = modes.unsqueeze(1).unsqueeze(1).expand(batch_size, seq_len, 1)
 
-        noisy_embeddings = word_embeddings.transpose(1,0) * math.sqrt(self.input_size)
+        noisy_embeddings = self.dropout(word_embeddings)
+        noisy_embeddings = noisy_embeddings.transpose(1,0) * math.sqrt(self.input_size)
         noisy_embeddings = self.pos_encoder(noisy_embeddings)
 
-        #noisy_embeddings = self.dropout(noisy_embeddings)
 
         # noisy_embeddings = torch.cat(
         #     [

@@ -24,7 +24,7 @@ articles = articles[articles.length < 1500] #.sample(n=100)
 vocabulary = Vocabulary(nlp, [articles.headline], size=2000)
 
 trainer = TensorboardTrainer(
-    name='run-29',
+    name='run-32',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',
