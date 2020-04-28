@@ -20,8 +20,6 @@ class MergeBatch(object):
 
         sample = sample.to_dict(orient="list")
 
-        sample['list_word_embeddings'] = sample['word_embeddings']
-
         sample['word_embeddings'] = torch.from_numpy(
             self.stack_vectors(
                 sample['word_embeddings']
@@ -31,12 +29,6 @@ class MergeBatch(object):
         sample['mode'] = torch.from_numpy(
             np.stack(
                 sample['mode']
-            ).astype(np.float32, copy=False)
-        ).to(self.device)
-
-        sample['word_embeddings_len'] = torch.from_numpy(
-            np.stack(
-                sample['word_embeddings_len']
             ).astype(np.float32, copy=False)
         ).to(self.device)
 

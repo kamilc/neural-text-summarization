@@ -1,6 +1,6 @@
 hypothesis==5.8.0
 pandas==1.0.3
 spacy==2.2.4
-tqdm==4.43.0
 fastparquet==0.3.3
 swifter==0.302
+rich==0.8.12

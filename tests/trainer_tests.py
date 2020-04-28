@@ -21,7 +21,7 @@ class TestTrainer(unittest.TestCase):
         for mode in ['train', 'test', 'val']:
             trainer = Trainer(
                 name='unit-test-run-1',
-                nlp=support.nlp,
+                vocabulary=support.vocabulary,
                 dataframe=support.articles,
                 optimizer_class_name='Adam',
                 model_args={
@@ -30,7 +30,8 @@ class TestTrainer(unittest.TestCase):
                     'num_layers': 2,
                     'num_heads': 2,
                     'dropout_rate': 0.2,
-                    'dim_feedforward_transformer': 8
+                    'dim_feedforward_transformer': 8,
+                    'vocabulary_size': len(support.vocabulary)
                 },
                 optimizer_args={},
                 batch_size=2,
@@ -45,9 +46,11 @@ class TestTrainer(unittest.TestCase):
             self.assertEqual(list(ixs), list(range(1, 11)))
 
     def test_text_decoding_from_embeddings_work(self):
+        vocabulary = support.capped_vocabulary(100)
+
         trainer = Trainer(
             name='unit-test-run-1',
-            nlp=support.nlp,
+            vocabulary=vocabulary,
             dataframe=support.articles,
             optimizer_class_name='Adam',
             model_args={
@@ -56,7 +59,8 @@ class TestTrainer(unittest.TestCase):
                 'num_layers': 2,
                 'num_heads': 2,
                 'dropout_rate': 0.2,
-                'dim_feedforward_transformer': 8
+                'dim_feedforward_transformer': 8,
+                'vocabulary_size': len(vocabulary)
             },
             optimizer_args={},
             batch_size=2,

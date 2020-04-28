@@ -1,5 +1,6 @@
 import spacy
 import pandas as pd
+from rich import print
 from cached_property import cached_property
 from lib.nlp.vocabulary import Vocabulary
 
@@ -15,15 +16,23 @@ def singleton(class_):
 class Support(object):
     @cached_property
     def nlp(self):
-        print(f"Loading Spacy model")
-        return spacy.load(
+        print(f"[orange]- [[.]] Loading SpaCy model ...[/orange]", end="")
+        model = spacy.load(
             "en_core_web_lg",
             disable=["tagger", "ner", "textcat"]
         )
+        print(f"\r[green]- [[X]] Loading SpaCy model[/green]")
+        return model
 
     @cached_property
     def articles(self):
-        return pd.read_parquet("data/articles-processed.parquet.gzip")
+        print(f"[orange]- [[.]] Loading dataframe ...[/orange]", end="")
+        dataframe = pd.read_parquet("data/articles-processed.parquet.gzip")
+        print(f"\r[green]- [[X]] Loading dataframe[/green]")
+        return dataframe
+
+    def capped_vocabulary(self, size):
+        return Vocabulary(self.nlp, [self.articles.headline], size=size)
 
     @cached_property
     def vocabulary(self):

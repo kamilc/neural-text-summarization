@@ -10,8 +10,13 @@ import spacy
 import pandas as pd
 import numpy as np
 import random
+from lib.nlp.vocabulary import Vocabulary
+from tests.support import Support
 from summarize.summarize_net import SummarizeNet
 from summarize.trainer import Trainer
+
+#support = Support()
+#vocabulary = Vocabulary(support.nlp, support.articles)
 
 class TestModel(unittest.TestCase):
     @given(
@@ -19,10 +24,13 @@ class TestModel(unittest.TestCase):
         st.sampled_from([100, 200]),
         st.sampled_from([32, 64, 128]),
         st.sampled_from([1, 2, 3]),
+        st.sampled_from([100, 200]),
         st.floats(min_value=0, max_value=1)
     )
     @settings(max_examples=10, deadline=10000)
-    def test_summarize_net_returns_correct_shapes(self, batch_size, seq_len, hidden_size, num_layers, dropout_rate):
+    def test_summarize_net_returns_correct_shapes(self, batch_size, seq_len,
+                                                  hidden_size, num_layers,
+                                                  vocabulary_size, dropout_rate):
         model = SummarizeNet(
             device='cuda',
             hidden_size=hidden_size,
@@ -30,7 +38,8 @@ class TestModel(unittest.TestCase):
             num_heads=10,
             dim_feedforward_transformer=128,
             num_layers=num_layers,
-            dropout_rate=dropout_rate
+            dropout_rate=dropout_rate,
+            vocabulary_size=vocabulary_size
         )
 
         embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
@@ -42,8 +51,9 @@ class TestModel(unittest.TestCase):
         )
 
         self.assertEqual(pred_logits.shape[0], batch_size)
-        self.assertEqual(pred_logits.shape[1], len(vocabulary))
-        self.assertEqual(len(pred_logits.shape), 2)
+        self.assertEqual(pred_logits.shape[1], seq_len)
+        self.assertEqual(pred_logits.shape[2], vocabulary_size)
+        self.assertEqual(len(pred_logits.shape), 3)
 
         self.assertEqual(pred_modes.shape[0], batch_size)
         self.assertEqual(pred_modes.shape[1], 1)

@@ -131,7 +131,7 @@ class BaseTrainer:
             else:
                 self.model.eval()
 
-            loss, word_embeddings = self.work_batch(batch)
+            loss, result = self.work_batch(batch)
             loss /= self.update_every
 
             if mode == "train":
@@ -146,7 +146,7 @@ class BaseTrainer:
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 
-                yield(UpdateInfo(self.decoder, batch, word_embeddings, loss_sum, mode=mode))
+                yield(UpdateInfo(self.vocabulary, batch, result, loss_sum, mode=mode))
 
                 loss_sum = 0
 
