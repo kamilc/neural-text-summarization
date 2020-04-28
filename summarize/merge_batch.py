@@ -20,13 +20,13 @@ class MergeBatch(object):
 
         sample = sample.to_dict(orient="list")
 
-        sample['word_embeddings'] = torch.from_numpy(
+        sample['word_embeddings'] = torch.tensor(
             self.stack_vectors(
                 sample['word_embeddings']
             ).astype(np.float32, copy=False)
         ).to(self.device)
 
-        sample['mode'] = torch.from_numpy(
+        sample['mode'] = torch.tensor(
             np.stack(
                 sample['mode']
             ).astype(np.float32, copy=False)

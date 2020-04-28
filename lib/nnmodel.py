@@ -1,4 +1,5 @@
 from pathlib import Path
+import copy
 import torch
 import torch.nn as nn
 
@@ -18,6 +19,9 @@ class NNModel(nn.Module):
             },
             path
         )
+
+    def _get_clones(self, module, N):
+        return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
     @classmethod
     def load(cls, path):

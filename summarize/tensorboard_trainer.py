@@ -19,6 +19,17 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
+                #import pdb; pdb.set_trace()
+
+                #data = [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
+
+                #print(f"WEIGHTS = {data[[0]]}")
+
+                self.writer.add_histogram(
+                    'transformer_linear1',
+                    [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
+                )
+
                 print(f"{update_info.batch.ix} => {update_info.metrics.loss} ({update_info.batch.word_embeddings.shape})") # {[ len(t) for t in update_info.batch.text ]}")
 
                 if update_info.batch.ix % 100 == 0:

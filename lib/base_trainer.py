@@ -134,6 +134,8 @@ class BaseTrainer:
             loss, result = self.work_batch(batch)
             loss /= self.update_every
 
+            # import pdb; pdb.set_trace()
+
             if mode == "train":
                 loss.backward()
 

@@ -31,25 +31,42 @@ class SummarizeNet(NNModel):
 
         self.encode_modes = nn.Linear(1, input_size)
 
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=input_size,
-            nhead=num_heads,
-            dim_feedforward=dim_feedforward_transformer
+        self.encoders = self._get_clones(
+            nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(
+                    d_model=input_size,
+                    nhead=num_heads,
+                    dim_feedforward=dim_feedforward_transformer
+                ),
+                num_layers=1
+            ),
+            num_layers
         )
 
-        decoder_layer = nn.TransformerDecoderLayer(
-            d_model=input_size,
-            nhead=num_heads,
-            dim_feedforward=dim_feedforward_transformer
+        self.decoders = self._get_clones(
+            nn.TransformerDecoder(
+                nn.TransformerDecoderLayer(
+                    d_model=input_size,
+                    nhead=num_heads,
+                    dim_feedforward=dim_feedforward_transformer
+                ),
+                num_layers=1
+            ),
+            num_layers
         )
 
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer,
-            num_layers=num_layers
+        self.encode_batch_norms = self._get_clones(
+            nn.BatchNorm1d(
+                num_features=input_size
+            ),
+            num_layers
         )
-        self.transformer_decoder = nn.TransformerDecoder(
-            decoder_layer,
-            num_layers=num_layers
+
+        self.decode_batch_norms = self._get_clones(
+            nn.BatchNorm1d(
+                num_features=input_size
+            ),
+            num_layers
         )
 
         self.discriminate = nn.Linear(hidden_size, 1)
@@ -90,22 +107,31 @@ class SummarizeNet(NNModel):
         mask.masked_fill(mask == 1, float('-inf'))
         mask = mask.requires_grad_(False).to(self.device)
 
-        encoded = self.transformer_encoder(
-            noisy_embeddings,
-            mask=mask
-        )
+        encoded = noisy_embeddings
+
+        for ix, encoder in enumerate(self.encoders):
+            encoded = encoder(
+                encoded,
+                mask=mask
+            )
+            encoded = self.encode_batch_norms[ix](encoded.transpose(2,1)).transpose(2,1)
 
         # predicted_modes = torch.sigmoid(
         #     self.discriminate(encoded.transpose(1,0)).mean(dim=1)
         # )
 
         # decoded = self.pre_decode(encoded)
-        decoded = self.transformer_decoder(
-            word_embeddings.transpose(1, 0),
-            encoded,
-            tgt_mask=mask,
-            memory_mask=mask
-        )
+        decoded = encoded
+
+        for ix, decoder in enumerate(self.decoders):
+            decoded = decoder(
+                word_embeddings.transpose(1, 0),
+                decoded,
+                tgt_mask=mask,
+                memory_mask=mask
+            )
+            decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
+
         decoded = self.linear_logits(decoded)
 
         return decoded.transpose(1,0), modes.unsqueeze(1) # predicted_modes
