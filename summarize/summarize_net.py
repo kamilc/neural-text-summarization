@@ -29,7 +29,10 @@ class SummarizeNet(NNModel):
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
         self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
 
-        self.encode_modes = nn.Linear(1, input_size)
+        self.encode_modes = nn.Linear(input_size+1, input_size)
+        self.to_input_batch_norm = nn.BatchNorm1d(
+            num_features=input_size
+        )
 
         self.encoders = self._get_clones(
             nn.TransformerEncoder(
@@ -104,14 +107,18 @@ class SummarizeNet(NNModel):
         noisy_embeddings = noisy_embeddings.transpose(1,0) * math.sqrt(self.input_size)
         noisy_embeddings = self.pos_encoder(noisy_embeddings)
 
+        noisy_embeddings = torch.cat(
+            [
+                expanded_modes.transpose(1,0),
+                noisy_embeddings
+            ],
+            dim=2
+        )
 
-        # noisy_embeddings = torch.cat(
-        #     [
-        #         noisy_embeddings,
-        #         expanded_modes.transpose(1,0)
-        #     ],
-        #     dim=2
-        # )
+        noisy_embeddings = self.encode_modes(noisy_embeddings)
+        noisy_embeddings = self.to_input_batch_norm(
+            noisy_embeddings.transpose(2,1)
+        ).transpose(2,1)
 
         mask = torch.tril(torch.ones(seq_len, seq_len))
         mask.masked_fill(mask == 1, float('-inf'))

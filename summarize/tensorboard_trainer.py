@@ -52,7 +52,7 @@ class TensorboardTrainer(Trainer):
 
                 text = next(update_info.decoded_inferred_texts)
 
-                print(f"TEST at {update_info.batch.ix}\n\tORIGINAL:\n\t{update_info.batch.text[0].strip().lower()} \tPREDICTED SUMMARY:\n\t{text}")
+                print(f"TEST at {update_info.batch.ix}\n\nORIGINAL:\n{update_info.batch.text[0].strip().lower()} \n\nPREDICTED SUMMARY:\n{text}")
 
                 self.writer.add_text(
                     'test/text',

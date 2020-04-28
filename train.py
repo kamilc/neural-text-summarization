@@ -6,7 +6,7 @@ from summarize.tensorboard_trainer import TensorboardTrainer
 from lib.nlp.vocabulary import Vocabulary
 
 if 'nlp' not in vars():
-    print(f"[orange]- [[.]] Loading SpaCy model ...[/orange]", end="")
+    print(f"[orange]- [[.]] Loading language ...[/orange]", end="")
     nlp = spacy.load(
         "en_core_web_lg",
         disable=["tagger", "ner", "textcat"]
@@ -21,10 +21,10 @@ if 'articles' not in vars():
 articles['length'] = articles.apply(lambda row: len(row['text']), axis=1)
 articles = articles[articles.length < 1500] #.sample(n=100)
 
-vocabulary = Vocabulary(nlp, [articles.headline], size=2000)
+vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
 
 trainer = TensorboardTrainer(
-    name='run-32',
+    name='run-34',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',

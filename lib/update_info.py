@@ -24,7 +24,7 @@ class UpdateInfo(object):
     @cached_property
     def decoded_inferred_texts(self):
         return (
-            ' '.join([ self.vocabulary.words[id] for id in ids])
+            ' '.join([ self.vocabulary.words[id] for id in ids]).strip('❟')
             for ids in self.decoded_word_ids
         )
 
