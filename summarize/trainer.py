@@ -61,19 +61,18 @@ class Trainer(BaseTrainer):
             classes.long().reshape(-1).to(self.device)
         )
 
-        return loss
         # embeddings_loss = F.cosine_embedding_loss(
         #   word_embeddings.reshape((-1, word_embeddings.shape[2])),
         #   original_word_embeddings.reshape((-1, original_word_embeddings.shape[2])),
         #   torch.ones(word_embeddings.shape[0] * word_embeddings.shape[1]).to(self.device)
         # )
 
-        # discriminator_loss = F.binary_cross_entropy(
-        #     discriminate_probs,
-        #     original_modes
-        # )
+        discriminator_loss = F.binary_cross_entropy(
+            mode_probs,
+            modes
+        )
 
-        # return embeddings_loss # + discriminator_loss
+        return loss + discriminator_loss
 
     def work_batch(self, batch):
         logits, mode_probs = self.model(

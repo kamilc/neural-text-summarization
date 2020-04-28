@@ -69,8 +69,18 @@ class SummarizeNet(NNModel):
             num_layers
         )
 
+        self.to_hidden_batch_norm = nn.BatchNorm1d(
+            num_features=hidden_size
+        )
+
+        self.from_hidden_batch_norm = nn.BatchNorm1d(
+            num_features=input_size
+        )
+
         self.discriminate = nn.Linear(hidden_size, 1)
         self.linear_logits = nn.Linear(input_size, self.vocabulary_size)
+        self.to_hidden = nn.Linear(input_size, hidden_size)
+        self.from_hidden = nn.Linear(hidden_size, input_size)
 
         self.to(self.device)
 
@@ -116,12 +126,21 @@ class SummarizeNet(NNModel):
             )
             encoded = self.encode_batch_norms[ix](encoded.transpose(2,1)).transpose(2,1)
 
-        # predicted_modes = torch.sigmoid(
-        #     self.discriminate(encoded.transpose(1,0)).mean(dim=1)
-        # )
+        encoded = torch.tanh(
+            self.to_hidden(encoded)
+        )
+
+        self.to_hidden_batch_norm(encoded.transpose(2,1)).transpose(2,1)
+
+        predicted_modes = torch.sigmoid(
+            self.discriminate(encoded.transpose(1,0)).mean(dim=1)
+        )
 
         # decoded = self.pre_decode(encoded)
-        decoded = encoded
+        decoded = torch.tanh(
+            self.from_hidden(encoded)
+        )
+        decoded = self.from_hidden_batch_norm(decoded.transpose(2,1)).transpose(2,1)
 
         for ix, decoder in enumerate(self.decoders):
             decoded = decoder(
@@ -134,4 +153,4 @@ class SummarizeNet(NNModel):
 
         decoded = self.linear_logits(decoded)
 
-        return decoded.transpose(1,0), modes.unsqueeze(1) # predicted_modes
+        return decoded.transpose(1,0), predicted_modes

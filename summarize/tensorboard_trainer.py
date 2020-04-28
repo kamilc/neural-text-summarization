@@ -25,10 +25,10 @@ class TensorboardTrainer(Trainer):
 
                 #print(f"WEIGHTS = {data[[0]]}")
 
-                self.writer.add_histogram(
-                    'transformer_linear1',
-                    [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
-                )
+                # self.writer.add_histogram(
+                #     'transformer_linear1',
+                #     [p.data for p in self.model.transformer_encoder.layers[0].linear1.parameters()][0]
+                # )
 
                 print(f"{update_info.batch.ix} => {update_info.metrics.loss} ({update_info.batch.word_embeddings.shape})") # {[ len(t) for t in update_info.batch.text ]}")
 
