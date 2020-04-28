@@ -22,37 +22,43 @@ from tests.support import Support
 support = Support()
 
 class TestDataset(unittest.TestCase):
-    def test_word_to_vectors_add_length(self):
-        text = "this is a sample text"
-        dataframe = pd.DataFrame(
-            {
-                'doc': [support.nlp(text)],
-                'text': text,
-                'headline': text,
-                'normalized_title': 'HowToStealTheMoon',
-                'set': ['train']
-            }
-        )
+    def test_test_mode_yields_correctly(self):
         dataset = ArticlesDataset(
-            dataframe,
-            "train",
+            support.articles,
+            "test",
             transforms=[
                 TextToParsedDoc(support.nlp),
                 WordsToVectors(support.nlp),
-                MergeBatch(torch.device("cuda"))
+                SetAllToSummarizing(),
+                MergeBatch(torch.device("cuda")),
             ]
         )
-
         loader = DataLoader(
             dataset,
-            batch_size=1
+            batch_size=8
         )
 
-        for batch in loader:
-            self.assertEqual(batch['word_embeddings_len'].shape[0], 1)
-            self.assertEqual(batch['word_embeddings_len'].cpu().item(), 9)
+        current_batch_id = 0
 
-            break
+        for data in loader:
+            if current_batch_id > 10:
+                break
+            else:
+                current_batch_id += 1
+
+                batch = Batch(
+                    data,
+                    ix=current_batch_id
+                )
+
+                for i in range(0, len(batch.idx)):
+                    ds = support.articles[
+                        support.articles.normalized_title == batch.title[i]
+                    ]
+
+                    self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
+                    self.assertEqual(batch.mode[i], 1)
+
 
     def test_modes_are_assigned_correctly(self):
         dataset = ArticlesDataset(
@@ -92,9 +98,9 @@ class TestDataset(unittest.TestCase):
                     self.assertEqual(ds.shape[0], 1)
 
                     if batch.mode[i].item() == 1.0:
-                        self.assertEqual(ds.iloc[0].headline, batch.text[i])
+                        self.assertEqual(ds.iloc[0].headline.strip().lower(), batch.text[i])
                     else:
-                        self.assertEqual(ds.iloc[0].text, batch.text[i])
+                        self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
 
                     embeddings = torch.from_numpy(
                         word2vec(

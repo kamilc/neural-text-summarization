@@ -47,7 +47,7 @@ class TensorboardTrainer(Trainer):
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
 
-            if update_info.batch.ix % 100 == 0 and update_info.batch.ix != 0:
+            if update_info.batch.ix % 1000 == 0 and update_info.batch.ix != 0:
                 test_update = next(test_updates)
 
                 text = next(update_info.decoded_inferred_texts)

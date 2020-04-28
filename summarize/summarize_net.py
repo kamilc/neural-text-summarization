@@ -107,18 +107,13 @@ class SummarizeNet(NNModel):
         noisy_embeddings = noisy_embeddings.transpose(1,0) * math.sqrt(self.input_size)
         noisy_embeddings = self.pos_encoder(noisy_embeddings)
 
-        noisy_embeddings = torch.cat(
-            [
-                expanded_modes.transpose(1,0),
-                noisy_embeddings
-            ],
-            dim=2
-        )
-
-        noisy_embeddings = self.encode_modes(noisy_embeddings)
-        noisy_embeddings = self.to_input_batch_norm(
-            noisy_embeddings.transpose(2,1)
-        ).transpose(2,1)
+        # noisy_embeddings = torch.cat(
+        #     [
+        #         expanded_modes.transpose(1,0),
+        #         noisy_embeddings
+        #     ],
+        #     dim=2
+        # )
 
         mask = torch.tril(torch.ones(seq_len, seq_len))
         mask.masked_fill(mask == 1, float('-inf'))
@@ -132,6 +127,20 @@ class SummarizeNet(NNModel):
                 mask=mask
             )
             encoded = self.encode_batch_norms[ix](encoded.transpose(2,1)).transpose(2,1)
+
+        last_encoded = encoded
+
+        encoded = torch.cat(
+            [
+                expanded_modes.transpose(1,0),
+                encoded
+            ],
+            dim=2
+        )
+        encoded = self.encode_modes(encoded)
+        encoded = self.to_input_batch_norm(
+            encoded.transpose(2,1)
+        ).transpose(2,1)
 
         encoded = torch.tanh(
             self.to_hidden(encoded)
@@ -151,8 +160,8 @@ class SummarizeNet(NNModel):
 
         for ix, decoder in enumerate(self.decoders):
             decoded = decoder(
-                word_embeddings.transpose(1, 0),
                 decoded,
+                last_encoded,
                 tgt_mask=mask,
                 memory_mask=mask
             )
