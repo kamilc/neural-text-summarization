@@ -11,7 +11,7 @@ if 'nlp' not in vars():
         "en_core_web_lg",
         disable=["tagger", "ner", "textcat"]
     )
-    print(f"\r[green]- [[X]] Loading SpaCy model[/green]")
+    print(f"\r[green]- [[X]] Loading language[/green]")
 
 if 'articles' not in vars():
     print(f"[orange]- [[.]] Loading dataset ...[/orange]", end="")
@@ -21,10 +21,10 @@ if 'articles' not in vars():
 articles['length'] = articles.apply(lambda row: len(row['text']), axis=1)
 articles = articles[articles.length < 1500] #.sample(n=10)
 
-vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
+vocabulary = Vocabulary(nlp, [articles.headline], size=40000)
 
 trainer = TensorboardTrainer(
-    name='run-45',
+    name='run-47',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',

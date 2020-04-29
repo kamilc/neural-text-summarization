@@ -13,7 +13,6 @@ class PositionalEncoding(nn.Module):
         \text{where pos is the word position and i is the embed idx)
     Args:
         d_model: the embed dim (required).
-        dropout: the dropout value (default=0.1).
         max_len: the max. length of the incoming sequence (default=5000).
     Examples:
         >>> pos_encoder = PositionalEncoding(d_model)

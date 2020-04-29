@@ -12,8 +12,12 @@ class ArticlesDataset(Dataset):
         self.transforms = transforms
         self.mode = mode
 
+        if len(self) == 0:
+            raise ValueError(f"{mode} appears to have 0 elements")
+
+
     def __len__(self):
-        return 2*len(self.data)
+        return len(self.data)
 
     def __getitem__(self, idx):
         _idx = []
@@ -26,16 +30,12 @@ class ArticlesDataset(Dataset):
         else:
             _idx = [ idx ]
 
-        _ids = [ (i - (i % 2))/2 for i in _idx]
-
-        data = self.data.iloc[_ids, :]
-        data['asked_id'] = _idx
+        data = self.data.iloc[_idx, :]
 
         data = pd.DataFrame(
             {
-                'set': [self.mode for _ in range(0, len(_ids))],
-                'mode': np.array([ (0.0 if i % 2 == 0 else 1.0) for i in _idx ]),
-                'text': data.apply(lambda row: row['text'].strip().lower() if row['set'] == 'test' or row['asked_id'] % 2 == 0 else row['headline'].strip().lower(), axis=1),
+                'text': data.apply(lambda row: row['text'].strip().lower(), axis=1),
+                'headline': data.apply(lambda row: row['headline'].strip().lower(), axis=1),
                 'title': data['normalized_title'],
                 'idx': np.array([ i for i in _idx ]),
             }

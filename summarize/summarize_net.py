@@ -29,7 +29,6 @@ class SummarizeNet(NNModel):
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
         self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
 
-        self.encode_modes = nn.Linear(input_size+1, input_size)
         self.to_input_batch_norm = nn.BatchNorm1d(
             num_features=input_size
         )
@@ -58,6 +57,18 @@ class SummarizeNet(NNModel):
             num_layers
         )
 
+        self.decoders_full = self._get_clones(
+            nn.TransformerDecoder(
+                nn.TransformerDecoderLayer(
+                    d_model=input_size,
+                    nhead=num_heads,
+                    dim_feedforward=dim_feedforward_transformer
+                ),
+                num_layers=1
+            ),
+            num_layers
+        )
+
         self.encode_batch_norms = self._get_clones(
             nn.BatchNorm1d(
                 num_features=input_size
@@ -72,6 +83,13 @@ class SummarizeNet(NNModel):
             num_layers
         )
 
+        self.decode_full_batch_norms = self._get_clones(
+            nn.BatchNorm1d(
+                num_features=input_size
+            ),
+            num_layers
+        )
+
         self.to_hidden_batch_norm = nn.BatchNorm1d(
             num_features=hidden_size
         )
@@ -80,46 +98,24 @@ class SummarizeNet(NNModel):
             num_features=input_size
         )
 
-        self.discriminate = nn.Linear(hidden_size, 1)
         self.linear_logits = nn.Linear(input_size, self.vocabulary_size)
+        self.linear_full_logits = nn.Linear(input_size, self.vocabulary_size)
+
         self.to_hidden = nn.Linear(input_size, hidden_size)
         self.from_hidden = nn.Linear(hidden_size, input_size)
 
         self.to(self.device)
 
-    def forward(self, word_embeddings, modes):
-        """
-        Shapes:
-          word_embeddings: [B, T, D]
-          modes:           [B]
-          returns:         [B, T, V]
-
-        Where:
-          B = batch size
-          T = max sequence length
-          D = embeddings dimentionality
-          V = vocabulary size
-        """
-        batch_size, seq_len, _ = word_embeddings.shape
-        expanded_modes = modes.unsqueeze(1).unsqueeze(1).expand(batch_size, seq_len, 1)
-
-        noisy_embeddings = self.dropout(word_embeddings)
-        noisy_embeddings = noisy_embeddings.transpose(1,0) * math.sqrt(self.input_size)
-        noisy_embeddings = self.pos_encoder(noisy_embeddings)
-
-        # noisy_embeddings = torch.cat(
-        #     [
-        #         expanded_modes.transpose(1,0),
-        #         noisy_embeddings
-        #     ],
-        #     dim=2
-        # )
+    def mask_for(self, embeddings):
+        batch_size, seq_len, _ = embeddings.shape
 
         mask = torch.tril(torch.ones(seq_len, seq_len))
         mask.masked_fill(mask == 1, float('-inf'))
-        mask = mask.requires_grad_(False).to(self.device)
 
-        encoded = noisy_embeddings
+        return mask.requires_grad_(False).to(self.device)
+
+    def encode(self, embeddings, mask):
+        encoded = embeddings.transpose(1,0)
 
         for ix, encoder in enumerate(self.encoders):
             encoded = encoder(
@@ -130,43 +126,45 @@ class SummarizeNet(NNModel):
 
         last_encoded = encoded
 
-        encoded = torch.cat(
-            [
-                expanded_modes.transpose(1,0),
-                encoded
-            ],
-            dim=2
-        )
-        encoded = self.encode_modes(encoded)
-        encoded = self.to_input_batch_norm(
-            encoded.transpose(2,1)
-        ).transpose(2,1)
-
         encoded = torch.tanh(
             self.to_hidden(encoded)
         )
 
-        self.to_hidden_batch_norm(encoded.transpose(2,1)).transpose(2,1)
+        return self.to_hidden_batch_norm(encoded.transpose(2,1)).transpose(2,1), last_encoded
 
-        predicted_modes = torch.sigmoid(
-            self.discriminate(encoded.transpose(1,0)).mean(dim=1)
-        )
+    def decode(self, encoded, last_state, mask, full=False):
+        decoders = self.decoders if full is False else self.decoders_full
+        decode_batch_norms = self.decode_batch_norms if full is False else self.decode_full_batch_norms
+        linear_logits = self.linear_logits if full is False else self.linear_full_logits
 
-        # decoded = self.pre_decode(encoded)
         decoded = torch.tanh(
             self.from_hidden(encoded)
         )
         decoded = self.from_hidden_batch_norm(decoded.transpose(2,1)).transpose(2,1)
 
-        for ix, decoder in enumerate(self.decoders):
+        for ix, decoder in enumerate(decoders):
             decoded = decoder(
                 decoded,
-                last_encoded,
+                last_state,
                 tgt_mask=mask,
                 memory_mask=mask
             )
-            decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
+            decoded = decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
 
-        decoded = self.linear_logits(decoded)
+        return linear_logits(decoded)
 
-        return decoded.transpose(1,0), predicted_modes
+    def encode_positions(self, embeddings):
+        embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
+        return self.pos_encoder(embeddings).transpose(1,0)
+
+    def forward(self, word_embeddings):
+        noisy_embeddings = self.dropout(word_embeddings)
+        noisy_embeddings = self.encode_positions(noisy_embeddings)
+
+        mask = self.mask_for(noisy_embeddings)
+
+        encoded, last_state = self.encode(noisy_embeddings, mask)
+        decoded = self.decode(encoded, last_state, mask, full=False)
+        decoded_reconstructed = self.decode(encoded, last_state, mask, full=True)
+
+        return decoded.transpose(1,0), decoded_reconstructed.transpose(1,0)
