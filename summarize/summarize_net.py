@@ -107,10 +107,10 @@ class SummarizeNet(NNModel):
         self.to(self.device)
 
     def mask_for(self, embeddings):
-        batch_size, seq_len, _ = embeddings.shape
+        _, seq_len, _ = embeddings.shape
 
-        mask = torch.tril(torch.ones(seq_len, seq_len))
-        mask.masked_fill(mask == 1, float('-inf'))
+        mask = (torch.triu(torch.ones(seq_len, seq_len)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
 
         return mask.requires_grad_(False).to(self.device)
 
@@ -132,7 +132,7 @@ class SummarizeNet(NNModel):
 
         return self.to_hidden_batch_norm(encoded.transpose(2,1)).transpose(2,1), last_encoded
 
-    def decode(self, encoded, last_state, mask, full=False):
+    def decode(self, encoded, mask, full=False):
         decoders = self.decoders if full is False else self.decoders_full
         decode_batch_norms = self.decode_batch_norms if full is False else self.decode_full_batch_norms
         linear_logits = self.linear_logits if full is False else self.linear_full_logits
@@ -145,7 +145,8 @@ class SummarizeNet(NNModel):
         for ix, decoder in enumerate(decoders):
             decoded = decoder(
                 decoded,
-                last_state,
+                #last_state,
+                torch.zeros_like(decoded),
                 tgt_mask=mask,
                 memory_mask=mask
             )
@@ -157,14 +158,24 @@ class SummarizeNet(NNModel):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
 
-    def forward(self, word_embeddings):
-        noisy_embeddings = self.dropout(word_embeddings)
-        noisy_embeddings = self.encode_positions(noisy_embeddings)
+    def forward(self, text_embeddings, headline_embeddings):
+        #noisy_embeddings = self.dropout(word_embeddings)
 
-        mask = self.mask_for(noisy_embeddings)
+        text_embeddings = self.encode_positions(text_embeddings)
+        headline_embeddings = self.encode_positions(headline_embeddings)
 
-        encoded, last_state = self.encode(noisy_embeddings, mask)
-        decoded = self.decode(encoded, last_state, mask, full=False)
-        decoded_reconstructed = self.decode(encoded, last_state, mask, full=True)
+        text_mask = self.mask_for(text_embeddings)
+        headline_mask = self.mask_for(headline_embeddings)
 
-        return decoded.transpose(1,0), decoded_reconstructed.transpose(1,0)
+        encoded_text, _ = self.encode(text_embeddings, text_mask)
+        encoded_headline, _ = self.encode(headline_embeddings, headline_mask)
+
+        decoded_text = self.decode(encoded_text, text_mask, full=True)
+        decoded_headline = self.decode(encoded_headline, headline_mask, full=False)
+
+        return (
+            decoded_text.transpose(1,0),
+            encoded_text,
+            decoded_headline.transpose(1,0),
+            encoded_headline,
+        )

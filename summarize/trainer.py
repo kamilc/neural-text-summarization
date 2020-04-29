@@ -53,35 +53,42 @@ class Trainer(BaseTrainer):
             )
         }
 
-    def compute_loss(self, logits, classes, logits_reconstruct, classes_reconstruct):
-        classes = F.pad(
-            classes,
-            (0, classes_reconstruct.shape[1] - classes.shape[1], 0, 0)
+    def compute_loss(self, text_logits, text_classes, text_state,
+                     headline_logits, headline_classes, headline_state):
+
+        headline_classes = F.pad(
+            headline_classes,
+            (0, headline_logits.shape[1] - headline_classes.shape[1])
         )
 
-        loss = F.cross_entropy(
-            logits.reshape(-1, logits.shape[2]).to(self.device),
-            classes.long().reshape(-1).to(self.device)
+        headline_loss = F.cross_entropy(
+            headline_logits.reshape(-1, headline_logits.shape[2]).to(self.device),
+            headline_classes.long().reshape(-1).to(self.device)
         )
 
-        loss_reconstruct = F.cross_entropy(
-            logits.reshape(-1, logits_reconstruct.shape[2]).to(self.device),
-            classes_reconstruct.long().reshape(-1).to(self.device)
+        text_loss = F.cross_entropy(
+            text_logits.reshape(-1, text_logits.shape[2]).to(self.device),
+            text_classes.long().reshape(-1).to(self.device)
         )
 
-        return loss + loss_reconstruct
+        gist_loss = F.mse_loss(text_state, headline_state)
+
+        return headline_loss + text_loss + gist_loss
 
     def work_batch(self, batch):
-        logits, reproduce_logits = self.model(
-            batch.word_embeddings.to(self.device)
+        text_logits, text_state, headline_logits, headline_state = self.model(
+            batch.text_embeddings.to(self.device),
+            batch.headline_embeddings.to(self.device)
         )
 
         return (
             self.compute_loss(
-                logits,
+                text_logits,
+                self.vocabulary.encode(batch.text),
+                text_state,
+                headline_logits,
                 self.vocabulary.encode(batch.headline),
-                reproduce_logits,
-                self.vocabulary.encode(batch.text)
+                headline_state
             ),
-            logits
+            headline_logits
         )

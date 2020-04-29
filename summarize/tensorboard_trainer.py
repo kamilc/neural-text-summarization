@@ -21,6 +21,12 @@ class TensorboardTrainer(Trainer):
 
                 print(f"{update_info.batch.ix} => {update_info.metrics.loss} ({update_info.batch.word_embeddings.shape})") # {[ len(t) for t in update_info.batch.text ]}")
 
+                if update_info.batch.ix % 100 == 0:
+                    predicted = next(update_info.decoded_inferred_texts).replace('\n', ' ').strip('❟ ❟ ❟')
+                    headline = update_info.batch.headline[0].replace('\n', ' ').lower().strip()
+                    text = update_info.batch.text[0].replace('\n', ' ').lower().strip()
+                    print(f"{update_info.batch.ix}\n\nTEXT:\n{text} \n\nHEADLINE:\n{headline} \n\nPREDICTED SUMMARY:\n{predicted}")
+
                 if update_info.batch.ix % 10 == 0:
                     self.writer.add_scalar(
                         'loss/train',
@@ -47,21 +53,28 @@ class TensorboardTrainer(Trainer):
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
 
-            if update_info.batch.ix % 1000 == 0 and update_info.batch.ix != 0:
+            if update_info.batch.ix % 100 == 0 and update_info.batch.ix != 0:
                 test_update = next(test_updates)
 
-                text = next(update_info.decoded_inferred_texts)
-
-                print(f"TEST at {update_info.batch.ix}\n\nORIGINAL:\n{update_info.batch.text[0].strip().lower()} \n\nPREDICTED SUMMARY:\n{text}")
+                predicted = next(update_info.decoded_inferred_texts).replace('\n', ' ').strip('❟ ❟ ❟')
+                headline = update_info.batch.headline[0].replace('\n', ' ').lower().strip()
+                text = update_info.batch.text[0].replace('\n', ' ').lower().strip()
 
                 self.writer.add_text(
                     'test/original-text',
-                    update_info.batch.text[0].strip().lower().replace('\n', ' '),
+                    text,
                     update_info.batch.ix
                 )
+
+                self.writer.add_text(
+                    'test/original-headline',
+                    headline,
+                    update_info.batch.ix
+                )
+
                 self.writer.add_text(
                     'test/predicted-summary',
-                    text.replace('\n', ' ').strip().lower(),
+                    predicted,
                     update_info.batch.ix
                 )
 

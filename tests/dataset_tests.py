@@ -100,11 +100,11 @@ class TestDataset(unittest.TestCase):
                         )
                     )
 
-                    diff = batch.word_embeddings[i, :, :].shape[0] - embeddings.shape[0]
+                    diff = batch.text_embeddings[i, :, :].shape[0] - embeddings.shape[0]
                     embeddings = F.pad(embeddings, (0,0,0,diff))
 
                     self.assertTrue(
-                        (embeddings.cpu() == batch.word_embeddings.cpu()[i, :, :]).all()
+                        (embeddings.cpu() == batch.text_embeddings.cpu()[i, :, :]).all()
                     )
 
 if __name__ == '__main__':

@@ -42,24 +42,25 @@ class TestModel(unittest.TestCase):
             vocabulary_size=vocabulary_size
         )
 
-        embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
-        modes = torch.rand((batch_size)).cuda()
+        text_embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
+        headline_embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
 
-        pred_logits, pred_reconstruct_logits = model(
-            embeddings
+        text_logits, text_state, headline_logits, headline_state = model(
+            text_embeddings,
+            headline_embeddings
         )
 
-        self.assertEqual(pred_logits.shape[0], batch_size)
-        self.assertEqual(pred_logits.shape[1], seq_len)
-        self.assertEqual(pred_logits.shape[2], vocabulary_size)
-        self.assertEqual(len(pred_logits.shape), 3)
+        self.assertEqual(text_logits.shape[0], batch_size)
+        self.assertEqual(text_logits.shape[1], seq_len)
+        self.assertEqual(text_logits.shape[2], vocabulary_size)
+        self.assertEqual(len(text_logits.shape), 3)
 
-        self.assertEqual(pred_reconstruct_logits.shape[0], batch_size)
-        self.assertEqual(pred_reconstruct_logits.shape[1], seq_len)
-        self.assertEqual(pred_reconstruct_logits.shape[2], vocabulary_size)
-        self.assertEqual(len(pred_reconstruct_logits.shape), 3)
+        self.assertEqual(headline_logits.shape[0], batch_size)
+        self.assertEqual(headline_logits.shape[1], seq_len)
+        self.assertEqual(headline_logits.shape[2], vocabulary_size)
+        self.assertEqual(len(headline_logits.shape), 3)
 
-        self.assertFalse((pred_logits == pred_reconstruct_logits).all())
+        self.assertFalse((text_logits == headline_logits).all())
 
 if __name__ == '__main__':
     doctest.testmod()

@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import numpy as np
 
 class MergeBatch(object):
@@ -16,14 +17,31 @@ class MergeBatch(object):
         )
 
     def __call__(self, sample):
-        del sample['doc']
+        del sample['text_doc']
+        del sample['headline_doc']
 
         sample = sample.to_dict(orient="list")
 
-        sample['word_embeddings'] = torch.tensor(
+        sample['text_embeddings'] = torch.tensor(
             self.stack_vectors(
-                sample['word_embeddings']
+                sample['text_embeddings']
             ).astype(np.float32, copy=False)
         ).to(self.device)
+
+        sample['headline_embeddings'] = torch.tensor(
+            self.stack_vectors(
+                sample['headline_embeddings']
+            ).astype(np.float32, copy=False)
+        ).to(self.device)
+
+        sample['headline_embeddings'] = F.pad(
+            sample['headline_embeddings'],
+            (
+                0,
+                0,
+                0,
+                sample['text_embeddings'].shape[1] - sample['headline_embeddings'].shape[1]
+            )
+        )
 
         return sample
