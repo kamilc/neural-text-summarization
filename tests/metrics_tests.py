@@ -12,7 +12,7 @@ class TestMetrics(unittest.TestCase):
         cumulative_metrics = Metrics.empty("train")
 
         for i in range(0, 10):
-            cumulative_metrics += Metrics("train", torch.tensor([i*1.0]))
+            cumulative_metrics += Metrics("train", torch.tensor([i*1.0]).item())
 
         self.assertEqual(cumulative_metrics.loss, 4.5)
         self.assertEqual(cumulative_metrics.running_mean_loss(5), 7)

@@ -19,29 +19,43 @@ if 'articles' not in vars():
     print(f"\r[green]- [[X]] Loading dataset[/green]")
 
 articles['length'] = articles.apply(lambda row: len(row['text']), axis=1)
-articles = articles[articles.length < 1500] #.sample(n=10)
+orig = articles
+articles = orig[orig.length < 1200]#.sample(n=10)
+
+while len(articles[articles.set == 'test']) == 0:
+    print("resampling")
+    articles = orig[orig.length < 1500].sample(n=10)
+
+print(f"Dataset size: {len(articles)}")
 
 vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
 
 trainer = TensorboardTrainer(
-    name='run-45',
+    name='run-68',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',
+    discriminator_optimizer_class_name='Adam',
     model_args={
         'hidden_size': 300,
         'input_size': 300,
-        'num_layers': 4,
-        'num_heads': 6,
+        'num_layers': 2,
+        'num_heads': 10,
         'dropout_rate': 0.2,
-        'dim_feedforward_transformer': 1048,
+        'dim_feedforward_transformer': 512,
         'vocabulary_size': len(vocabulary)
+    },
+    discriminator_args={
+        'input_size': 300,
+        'hidden_size': 300,
     },
     optimizer_args={
         'lr': 1e-4
     },
-    batch_size=4,
-    update_every=1,
+    discriminator_optimizer_args={
+        'lr': 1e-4
+    },
+    batch_size=16,
     device=torch.device('cuda')
 )
 

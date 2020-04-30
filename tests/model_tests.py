@@ -45,7 +45,7 @@ class TestModel(unittest.TestCase):
         embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
         modes = torch.rand((batch_size, 1)).cuda()
 
-        decoded, predicted_modes = model(
+        decoded, state = model(
             embeddings,
             modes
         )
@@ -55,11 +55,9 @@ class TestModel(unittest.TestCase):
         self.assertEqual(decoded.shape[2], vocabulary_size)
         self.assertEqual(len(decoded.shape), 3)
 
-        self.assertEqual(predicted_modes.shape[0], batch_size)
-        self.assertEqual(predicted_modes.shape[1], 1)
-        self.assertEqual(len(predicted_modes.shape), 2)
-
-        self.assertTrue((predicted_modes > 0).all())
+        self.assertEqual(state.shape[0], batch_size)
+        self.assertEqual(state.shape[1], hidden_size)
+        self.assertEqual(len(state.shape), 2)
 
 if __name__ == '__main__':
     doctest.testmod()

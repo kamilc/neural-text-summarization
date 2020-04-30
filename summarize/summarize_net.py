@@ -84,9 +84,6 @@ class SummarizeNet(NNModel):
         self.to_hidden = nn.Linear(input_size, hidden_size)
         self.from_hidden = nn.Linear(hidden_size, input_size)
 
-        self.discriminate_in = nn.Linear(hidden_size, 1024)
-        self.discriminate_out = nn.Linear(1024, 1)
-
         self.to(self.device)
 
     def mask_for(self, embeddings):
@@ -139,17 +136,6 @@ class SummarizeNet(NNModel):
 
         return self.linear_logits(decoded.transpose(1,0))
 
-    def discriminate(self, encoded):
-        result = encoded.detach()
-
-        result = torch.tanh(
-            self.discriminate_in(result)
-        )
-
-        return torch.sigmoid(
-            self.discriminate_out(result)
-        )
-
     def encode_positions(self, embeddings):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
@@ -164,9 +150,8 @@ class SummarizeNet(NNModel):
         encoded = self.encode(embeddings)
 
         decoded = self.decode(encoded, mask, modes)
-        predicted_modes = self.discriminate(encoded)
 
         return (
             decoded,
-            predicted_modes
+            encoded
         )

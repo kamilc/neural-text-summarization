@@ -2,11 +2,14 @@ from cached_property import cached_property
 from lib.metrics import Metrics
 
 class UpdateInfo(object):
-    def __init__(self, vocabulary, batch, result, loss_sum, mode):
+    def __init__(self, vocabulary, batch, result, losses, mode):
+        loss, discriminator_loss = losses
+
         self.vocabulary = vocabulary
         self.batch = batch
         self.result = result
-        self.loss_sum = loss_sum
+        self.loss = loss
+        self.discriminator_loss = discriminator_loss
         self.mode = mode
 
     @property
@@ -30,4 +33,4 @@ class UpdateInfo(object):
 
     @cached_property
     def metrics(self):
-        return Metrics(self.mode, self.loss_sum)
+        return Metrics(self.mode, self.loss)

@@ -1,10 +1,14 @@
 import statistics
 import numpy as np
+import torch
 
 class Metrics(object):
     def __init__(self, mode, loss=None):
+        if torch.is_tensor(loss):
+            loss = loss.cpu().item()
+
         self.mode = mode
-        self.losses = [loss.cpu().item()] if loss is not None else []
+        self.losses = [loss] if loss is not None else []
 
     @classmethod
     def empty(cls, mode):

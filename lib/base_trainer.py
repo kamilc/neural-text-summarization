@@ -1,6 +1,8 @@
 from cached_property import cached_property
 import torch
+import torch.nn.functional as F
 import os
+import numpy as np
 from pathlib import Path
 
 from lib.batch import Batch
@@ -10,8 +12,10 @@ from lib.dataloading.dataloader import DataLoader
 class BaseTrainer:
     def __init__(self, name, dataframe,
                  optimizer_class_name,
+                 discriminator_optimizer_class_name,
                  model_args, optimizer_args,
-                 batch_size, update_every,
+                 discriminator_args, discriminator_optimizer_args,
+                 batch_size,
                  device
                 ):
         self.name = name
@@ -19,12 +23,15 @@ class BaseTrainer:
         self.dataframe = dataframe
         self.device = device
         self.batch_size = batch_size
-        self.update_every = update_every
 
         self.optimizer_class_name = optimizer_class_name
+        self.discriminator_optimizer_class_name = discriminator_optimizer_class_name
 
         self.model_args = model_args
         self.optimizer_args = optimizer_args
+
+        self.discriminator_args = discriminator_args
+        self.discriminator_optimizer_args = discriminator_optimizer_args
 
         self.current_batch_id = 0
 
@@ -35,6 +42,10 @@ class BaseTrainer:
     def model_class(self):
         pass
 
+    @property
+    def discriminator_class(self):
+        pass
+
     @cached_property
     def model(self):
         try:
@@ -43,10 +54,23 @@ class BaseTrainer:
             return self.model_class(self.device, **self.model_args).to(self.device)
 
     @cached_property
+    def discriminator(self):
+        try:
+            return self.discriminator_class.load(f"{self.checkpoint_path}/discriminator.pth").to(self.device)
+        except FileNotFoundError:
+            return self.discriminator_class(self.device, **self.discriminator_args).to(self.device)
+
+    @cached_property
     def optimizer(self):
         class_ = getattr(torch.optim, self.optimizer_class_name)
 
         return class_(self.model.parameters(), **self.optimizer_args)
+
+    @cached_property
+    def discriminator_optimizer(self):
+        class_ = getattr(torch.optim, self.discriminator_optimizer_class_name)
+
+        return class_(self.discriminator.parameters(), **self.discriminator_optimizer_args)
 
     @property
     def checkpoint_path(self):
@@ -56,15 +80,18 @@ class BaseTrainer:
         os.makedirs(self.checkpoint_path, exist_ok=True)
 
         self.model.save(f"{self.checkpoint_path}/model.pth")
+        self.discriminator.save(f"{self.checkpoint_path}/discriminator.pth")
 
         torch.save(
             {
                 'current_batch_id': self.current_batch_id,
                 'batch_size': self.batch_size,
-                'update_every': self.update_every,
                 'optimizer_class_name': self.optimizer_class_name,
                 'optimizer_args': self.optimizer_args,
-                'optimizer_state_dict': self.optimizer.state_dict()
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'discriminator_optimizer_class_name': self.discriminator_optimizer_class_name,
+                'discriminator_optimizer_args': self.discriminator_optimizer_args,
+                'discriminator_optimizer_state_dict': self.discriminator_optimizer.state_dict()
             },
             f"{self.checkpoint_path}/trainer.pth"
         )
@@ -81,9 +108,6 @@ class BaseTrainer:
         path = self.checkpoint_directories[0]
 
         data = torch.load(f"{path}/trainer.pth")
-
-        self.batch_size = data['batch_size']
-        self.update_every = data['update_every']
 
         self.optimizer_class_name = data['optimizer_class_name']
         self.optimizer_args = data['optimizer_args']
@@ -115,42 +139,80 @@ class BaseTrainer:
                     )
                 )
 
-    def work_batch(self, batch):
+    def work_model(self, batch):
         raise NotImplementedError
 
-    def updates(self, mode="train", update_every=None):
-        batches = self.batches(mode)
-        loss_sum = 0
+    def work_discriminator(self, state, batch):
+        raise NotImplementedError
 
-        if update_every is None:
-            update_every = self.update_every
+    def updates(self, mode="train"):
+        batches = self.batches(mode)
 
         for batch in batches:
             if mode == "train":
                 self.model.train()
+                self.discriminator.train()
             else:
                 self.model.eval()
+                self.discriminator.eval()
 
-            loss, result = self.work_batch(batch)
-            loss /= self.update_every
+            # if mode == "train":
+            #     loss.backward()
 
-            # import pdb; pdb.set_trace()
+            # if mode == "train":
+            #     self.optimizer.step()
+            #     self.optimizer.zero_grad()
+
+            # yield(UpdateInfo(self.vocabulary, batch, result, loss, mode=mode))
+
+            logits, state = self.model(
+                batch.word_embeddings.to(self.device),
+                batch.mode.to(self.device)
+            )
+            # self.optimizer.zero_grad()
+
+            mode_probs = self.discriminator(state.detach())
+
+            discriminator_loss = F.binary_cross_entropy(
+                mode_probs,
+                batch.mode
+            )
+
+            discriminator_loss.backward(retain_graph=True)
 
             if mode == "train":
-                loss.backward()
+                self.discriminator_optimizer.step()
 
-            loss_sum += loss
+            self.discriminator_optimizer.zero_grad()
 
-            # we're doing the accumulated gradients trick to get the gradients variance
-            # down while being able to use commodity GPU:
-            if batch.ix % update_every == 0:
-                if mode == "train":
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+            classes = self.vocabulary.encode(batch.text)
 
-                yield(UpdateInfo(self.vocabulary, batch, result, loss_sum, mode=mode))
+            model_loss = F.cross_entropy(
+                logits.reshape(-1, logits.shape[2]).to(self.device),
+                classes.long().reshape(-1).to(self.device)
+            )
+            # model_loss.backward()
+            #self.optimizer.zero_grad()
 
-                loss_sum = 0
+            # mode_probs2 = self.discriminator(state)
+
+            fooling_loss = F.binary_cross_entropy(
+                mode_probs,
+                torch.ones_like(batch.mode).to(self.device)
+            )
+
+            loss = model_loss + fooling_loss
+
+            loss.backward()
+            if mode == "train":
+                self.optimizer.step()
+
+            self.optimizer.zero_grad()
+            # self.discriminator_optimizer.zero_grad()
+
+            # yield(UpdateInfo(self.vocabulary, batch, logits.cpu(), [loss.cpu().item(), discriminator_loss.cpu().item()], mode=mode))
+
+            yield(UpdateInfo(self.vocabulary, batch, logits, [loss.cpu().item(), discriminator_loss.cpu().item()], mode=mode))
 
     def train_and_evaluate_updates(self, evaluate_every=100):
         train_updates = self.updates(mode="train")
@@ -164,4 +226,4 @@ class BaseTrainer:
                     yield(next(evaluate_updates))
 
     def test_updates(self):
-        return self.updates(mode="test", update_every=1)
+        return self.updates(mode="test")

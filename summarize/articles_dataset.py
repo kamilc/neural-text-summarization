@@ -35,6 +35,8 @@ class ArticlesDataset(Dataset):
             {
                 'set': [self.mode for _ in range(0, len(_ids))],
                 'mode': np.array([ (0.0 if i % 2 == 0 else 1.0) for i in _idx ]),
+                'orig_text': data['text'],
+                'orig_headline': data['headline'],
                 'text': data.apply(lambda row: row['text'].strip().lower() if row['set'] == 'test' or row['asked_id'] % 2 == 0 else row['headline'].strip().lower(), axis=1),
                 'title': data['normalized_title'],
                 'idx': np.array([ i for i in _idx ]),

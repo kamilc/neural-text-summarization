@@ -24,6 +24,7 @@ class TestTrainer(unittest.TestCase):
                 vocabulary=support.vocabulary,
                 dataframe=support.articles,
                 optimizer_class_name='Adam',
+                discriminator_optimizer_class_name='Adam',
                 model_args={
                     'hidden_size': 32,
                     'input_size': 300,
@@ -33,9 +34,13 @@ class TestTrainer(unittest.TestCase):
                     'dim_feedforward_transformer': 8,
                     'vocabulary_size': len(support.vocabulary)
                 },
+                discriminator_args={
+                    'input_size': 32,
+                    'hidden_size': 32,
+                },
                 optimizer_args={},
+                discriminator_optimizer_args={},
                 batch_size=2,
-                update_every=1,
                 device=torch.device('cpu')
             )
             self.assertGreater(len(trainer.datasets[mode]), 0)
@@ -53,6 +58,7 @@ class TestTrainer(unittest.TestCase):
             vocabulary=vocabulary,
             dataframe=support.articles,
             optimizer_class_name='Adam',
+            discriminator_optimizer_class_name='Adam',
             model_args={
                 'hidden_size': 32,
                 'input_size': 300,
@@ -62,9 +68,13 @@ class TestTrainer(unittest.TestCase):
                 'dim_feedforward_transformer': 8,
                 'vocabulary_size': len(vocabulary)
             },
+            discriminator_args={
+                'input_size': 32,
+                'hidden_size': 32,
+            },
             optimizer_args={},
+            discriminator_optimizer_args={},
             batch_size=2,
-            update_every=1,
             device=torch.device('cuda')
         )
 

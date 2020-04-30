@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from lib.base_trainer import BaseTrainer
 
 from summarize.summarize_net import SummarizeNet
+from summarize.discriminator_net import DiscriminatorNet
 from summarize.articles_dataset import ArticlesDataset
 from summarize.text_to_parsed_doc import TextToParsedDoc
 from summarize.words_to_vectors import WordsToVectors
@@ -20,6 +21,10 @@ class Trainer(BaseTrainer):
     @property
     def model_class(self):
         return SummarizeNet
+
+    @property
+    def discriminator_class(self):
+        return DiscriminatorNet
 
     @cached_property
     def datasets(self):
@@ -54,38 +59,23 @@ class Trainer(BaseTrainer):
             )
         }
 
-    def compute_loss(self, logits, classes, mode_probs, modes):
-        #import pdb; pdb.set_trace()
-        loss = F.cross_entropy(
+    def compute_model_loss(self, logits, classes):
+        return F.cross_entropy(
             logits.reshape(-1, logits.shape[2]).to(self.device),
             classes.long().reshape(-1).to(self.device)
         )
 
-        # embeddings_loss = F.cosine_embedding_loss(
-        #   word_embeddings.reshape((-1, word_embeddings.shape[2])),
-        #   original_word_embeddings.reshape((-1, original_word_embeddings.shape[2])),
-        #   torch.ones(word_embeddings.shape[0] * word_embeddings.shape[1]).to(self.device)
-        # )
-
-        discriminator_loss = F.binary_cross_entropy(
-            mode_probs,
-            modes
-        )
-
-        return loss + discriminator_loss
-
-    def work_batch(self, batch):
-        logits, mode_probs = self.model(
+    def work_model(self, batch):
+        logits, state = self.model(
             batch.word_embeddings.to(self.device),
             batch.mode.to(self.device)
         )
 
         return (
-            self.compute_loss(
+            self.compute_model_loss(
                 logits,
                 self.vocabulary.encode(batch.text),
-                mode_probs,
-                batch.mode
             ),
-            logits
+            logits,
+            state
         )

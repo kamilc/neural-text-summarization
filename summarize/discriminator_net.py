@@ -1,27 +1,28 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from lib.nnmodel import NNModel
 
 class DiscriminatorNet(NNModel):
-    def __init__(self, input_size):
-        super(DiscriminatorNet, self).__init__()
+    def __init__(self, device, input_size, hidden_size):
+        super(DiscriminatorNet, self).__init__(
+            device=device,
+            input_size=input_size,
+            hidden_size=hidden_size
+        )
 
+        self.device = torch.device(device)
         self.input_size = input_size
+        self.hidden_size = hidden_size
 
-        self.linear = nn.Linear(input_size, 1)
+        self.discriminate_in = nn.Linear(input_size, hidden_size)
+        self.discriminate_out = nn.Linear(hidden_size, 1)
 
-    def forward(self, state):
-        """
-        The forward pass for the network
+    def forward(self, encoded):
+        result = torch.tanh(
+            self.discriminate_in(encoded)
+        )
 
-        hidden_state : tensor (batch_num, hidden_size)
-
-        returns         : tensor (batch_num, 1)
-        """
-
-        state = state.transpose(0, 1).reshape(-1, self.input_size)
-        state = self.linear(state)
-        state = F.sigmoid(state)
-
-        return state
-
+        return torch.sigmoid(
+            self.discriminate_out(result)
+        )
