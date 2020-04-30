@@ -55,13 +55,8 @@ class TensorboardTrainer(Trainer):
                 print(f"TEST at {update_info.batch.ix}\n\nORIGINAL:\n{update_info.batch.text[0].strip().lower()} \n\nPREDICTED SUMMARY:\n{text}")
 
                 self.writer.add_text(
-                    'test/original-text',
-                    update_info.batch.text[0].strip().lower().replace('\n', ' '),
-                    update_info.batch.ix
-                )
-                self.writer.add_text(
-                    'test/predicted-summary',
-                    text.replace('\n', ' ').strip().lower(),
+                    'test/text',
+                    text,
                     update_info.batch.ix
                 )
 

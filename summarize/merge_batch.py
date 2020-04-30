@@ -26,4 +26,10 @@ class MergeBatch(object):
             ).astype(np.float32, copy=False)
         ).to(self.device)
 
+        sample['mode'] = torch.tensor(
+            np.stack(
+                sample['mode']
+            ).astype(np.float32, copy=False)
+        ).to(self.device)
+
         return sample

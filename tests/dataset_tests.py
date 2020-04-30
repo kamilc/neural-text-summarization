@@ -29,6 +29,7 @@ class TestDataset(unittest.TestCase):
             transforms=[
                 TextToParsedDoc(support.nlp),
                 WordsToVectors(support.nlp),
+                SetAllToSummarizing(),
                 MergeBatch(torch.device("cuda")),
             ]
         )
@@ -56,6 +57,8 @@ class TestDataset(unittest.TestCase):
                     ]
 
                     self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
+                    self.assertEqual(batch.mode[i], 1)
+
 
     def test_modes_are_assigned_correctly(self):
         dataset = ArticlesDataset(
@@ -93,6 +96,11 @@ class TestDataset(unittest.TestCase):
                     ]
 
                     self.assertEqual(ds.shape[0], 1)
+
+                    if batch.mode[i].item() == 1.0:
+                        self.assertEqual(ds.iloc[0].headline.strip().lower(), batch.text[i])
+                    else:
+                        self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
 
                     embeddings = torch.from_numpy(
                         word2vec(

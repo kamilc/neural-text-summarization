@@ -39,6 +39,7 @@ class Trainer(BaseTrainer):
                 transforms=[
                     TextToParsedDoc(self.vocabulary.nlp),
                     WordsToVectors(self.vocabulary.nlp),
+                    SetAllToSummarizing(),
                     MergeBatch(self.device)
                 ]
             ),
@@ -53,35 +54,38 @@ class Trainer(BaseTrainer):
             )
         }
 
-    def compute_loss(self, logits, classes, logits_reconstruct, classes_reconstruct):
-        classes = F.pad(
-            classes,
-            (0, classes_reconstruct.shape[1] - classes.shape[1], 0, 0)
-        )
-
+    def compute_loss(self, logits, classes, mode_probs, modes):
+        #import pdb; pdb.set_trace()
         loss = F.cross_entropy(
             logits.reshape(-1, logits.shape[2]).to(self.device),
             classes.long().reshape(-1).to(self.device)
         )
 
-        loss_reconstruct = F.cross_entropy(
-            logits.reshape(-1, logits_reconstruct.shape[2]).to(self.device),
-            classes_reconstruct.long().reshape(-1).to(self.device)
+        # embeddings_loss = F.cosine_embedding_loss(
+        #   word_embeddings.reshape((-1, word_embeddings.shape[2])),
+        #   original_word_embeddings.reshape((-1, original_word_embeddings.shape[2])),
+        #   torch.ones(word_embeddings.shape[0] * word_embeddings.shape[1]).to(self.device)
+        # )
+
+        discriminator_loss = F.binary_cross_entropy(
+            mode_probs,
+            modes
         )
 
-        return loss + loss_reconstruct
+        return loss + discriminator_loss
 
     def work_batch(self, batch):
-        logits, reproduce_logits = self.model(
-            batch.word_embeddings.to(self.device)
+        logits, mode_probs = self.model(
+            batch.word_embeddings.to(self.device),
+            batch.mode.to(self.device)
         )
 
         return (
             self.compute_loss(
                 logits,
-                self.vocabulary.encode(batch.headline),
-                reproduce_logits,
-                self.vocabulary.encode(batch.text)
+                self.vocabulary.encode(batch.text),
+                mode_probs,
+                batch.mode
             ),
             logits
         )
