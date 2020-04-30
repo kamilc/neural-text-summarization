@@ -161,6 +161,9 @@ class SummarizeNet(NNModel):
     def forward(self, text_embeddings, headline_embeddings):
         #noisy_embeddings = self.dropout(word_embeddings)
 
+        if not self.training:
+            headline_embeddings = text_embeddings.clone()
+
         text_embeddings = self.encode_positions(text_embeddings)
         headline_embeddings = self.encode_positions(headline_embeddings)
 
@@ -169,6 +172,9 @@ class SummarizeNet(NNModel):
 
         encoded_text, _ = self.encode(text_embeddings, text_mask)
         encoded_headline, _ = self.encode(headline_embeddings, headline_mask)
+
+        if not self.training:
+            encoded_headline = encoded_text.clone()
 
         decoded_text = self.decode(encoded_text, text_mask, full=True)
         decoded_headline = self.decode(encoded_headline, headline_mask, full=False)
