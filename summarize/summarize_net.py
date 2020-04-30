@@ -29,7 +29,6 @@ class SummarizeNet(NNModel):
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
         self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
 
-        self.encode_modes = nn.Linear(input_size+1, input_size)
         self.to_input_batch_norm = nn.BatchNorm1d(
             num_features=input_size
         )
@@ -80,93 +79,94 @@ class SummarizeNet(NNModel):
             num_features=input_size
         )
 
-        self.discriminate = nn.Linear(hidden_size, 1)
         self.linear_logits = nn.Linear(input_size, self.vocabulary_size)
+
         self.to_hidden = nn.Linear(input_size, hidden_size)
         self.from_hidden = nn.Linear(hidden_size, input_size)
 
+        self.discriminate_in = nn.Linear(hidden_size, 1024)
+        self.discriminate_out = nn.Linear(1024, 1)
+
         self.to(self.device)
 
-    def forward(self, word_embeddings, modes):
-        """
-        Shapes:
-          word_embeddings: [B, T, D]
-          modes:           [B]
-          returns:         [B, T, V]
+    def mask_for(self, embeddings):
+        _, seq_len, _ = embeddings.shape
 
-        Where:
-          B = batch size
-          T = max sequence length
-          D = embeddings dimentionality
-          V = vocabulary size
-        """
-        batch_size, seq_len, _ = word_embeddings.shape
-        expanded_modes = modes.unsqueeze(1).unsqueeze(1).expand(batch_size, seq_len, 1)
+        mask = (torch.triu(torch.ones(seq_len, seq_len)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
 
-        noisy_embeddings = self.dropout(word_embeddings)
-        noisy_embeddings = noisy_embeddings.transpose(1,0) * math.sqrt(self.input_size)
-        noisy_embeddings = self.pos_encoder(noisy_embeddings)
+        return mask.requires_grad_(False).to(self.device)
 
-        # noisy_embeddings = torch.cat(
-        #     [
-        #         expanded_modes.transpose(1,0),
-        #         noisy_embeddings
-        #     ],
-        #     dim=2
-        # )
-
-        mask = torch.tril(torch.ones(seq_len, seq_len))
-        mask.masked_fill(mask == 1, float('-inf'))
-        mask = mask.requires_grad_(False).to(self.device)
-
-        encoded = noisy_embeddings
+    def encode(self, embeddings):
+        encoded = embeddings.transpose(1,0)
 
         for ix, encoder in enumerate(self.encoders):
-            encoded = encoder(
-                encoded,
-                mask=mask
-            )
+            encoded = encoder(encoded)
             encoded = self.encode_batch_norms[ix](encoded.transpose(2,1)).transpose(2,1)
 
         last_encoded = encoded
-
-        encoded = torch.cat(
-            [
-                expanded_modes.transpose(1,0),
-                encoded
-            ],
-            dim=2
-        )
-        encoded = self.encode_modes(encoded)
-        encoded = self.to_input_batch_norm(
-            encoded.transpose(2,1)
-        ).transpose(2,1)
 
         encoded = torch.tanh(
             self.to_hidden(encoded)
         )
 
-        self.to_hidden_batch_norm(encoded.transpose(2,1)).transpose(2,1)
+        return self.to_hidden_batch_norm(
+            encoded.transpose(2,1)
+        ).transpose(2,1)[0, :, :]
 
-        predicted_modes = torch.sigmoid(
-            self.discriminate(encoded.transpose(1,0)).mean(dim=1)
+    def decode(self, encoded, mask, modes):
+        encoded = encoded.unsqueeze(axis=1).expand(
+            modes.shape[0], mask.shape[0], encoded.shape[1]
         )
 
-        # decoded = self.pre_decode(encoded)
         decoded = torch.tanh(
             self.from_hidden(encoded)
         )
-        decoded = self.from_hidden_batch_norm(decoded.transpose(2,1)).transpose(2,1)
+
+        decoded = self.from_hidden_batch_norm(
+            decoded.transpose(2,1)
+        ).transpose(2,1)
+
+        decoded = decoded.transpose(1,0)
 
         for ix, decoder in enumerate(self.decoders):
             decoded = decoder(
                 decoded,
-                last_encoded,
-                tgt_mask=mask,
-                memory_mask=mask
+                torch.zeros_like(decoded),
+                tgt_mask=mask
             )
             decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
 
-        decoded = self.linear_logits(decoded)
+        return self.linear_logits(decoded.transpose(1,0))
 
-        return decoded.transpose(1,0), predicted_modes
+    def discriminate(self, encoded):
+        result = encoded.detach()
+
+        result = torch.tanh(
+            self.discriminate_in(result)
+        )
+
+        return torch.sigmoid(
+            self.discriminate_out(result)
+        )
+
+    def encode_positions(self, embeddings):
+        embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
+        return self.pos_encoder(embeddings).transpose(1,0)
+
+    def forward(self, embeddings, modes):
+        #noisy_embeddings = self.dropout(word_embeddings)
+
+        embeddings = self.encode_positions(embeddings)
+
+        mask = self.mask_for(embeddings)
+
+        encoded = self.encode(embeddings)
+
+        decoded = self.decode(encoded, mask, modes)
+        predicted_modes = self.discriminate(encoded)
+
+        return (
+            decoded,
+            predicted_modes
+        )
