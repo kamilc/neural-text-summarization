@@ -43,7 +43,7 @@ class TestModel(unittest.TestCase):
         )
 
         embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
-        modes = torch.rand((batch_size, 1)).cuda()
+        modes = torch.rand((batch_size)).cuda()
 
         decoded, state = model(
             embeddings,

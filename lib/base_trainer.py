@@ -156,25 +156,19 @@ class BaseTrainer:
                 self.model.eval()
                 self.discriminator.eval()
 
-            # if mode == "train":
-            #     loss.backward()
-
-            # if mode == "train":
-            #     self.optimizer.step()
-            #     self.optimizer.zero_grad()
-
-            # yield(UpdateInfo(self.vocabulary, batch, result, loss, mode=mode))
+            self.optimizer.zero_grad()
+            self.discriminator_optimizer.zero_grad()
 
             logits, state = self.model(
                 batch.word_embeddings.to(self.device),
                 batch.mode.to(self.device)
             )
-            # self.optimizer.zero_grad()
 
-            mode_probs = self.discriminator(state.detach())
+            mode_probs_disc = self.discriminator(state.detach())
+            mode_probs = self.discriminator(state)
 
             discriminator_loss = F.binary_cross_entropy(
-                mode_probs,
+                mode_probs_disc,
                 batch.mode
             )
 
@@ -183,36 +177,40 @@ class BaseTrainer:
             if mode == "train":
                 self.discriminator_optimizer.step()
 
-            self.discriminator_optimizer.zero_grad()
-
             classes = self.vocabulary.encode(batch.text)
 
             model_loss = F.cross_entropy(
                 logits.reshape(-1, logits.shape[2]).to(self.device),
                 classes.long().reshape(-1).to(self.device)
             )
-            # model_loss.backward()
-            #self.optimizer.zero_grad()
-
-            # mode_probs2 = self.discriminator(state)
 
             fooling_loss = F.binary_cross_entropy(
                 mode_probs,
                 torch.ones_like(batch.mode).to(self.device)
             )
 
-            loss = model_loss + fooling_loss
+            loss = model_loss + (0.01 * fooling_loss)
 
             loss.backward()
             if mode == "train":
                 self.optimizer.step()
 
             self.optimizer.zero_grad()
-            # self.discriminator_optimizer.zero_grad()
+            self.discriminator_optimizer.zero_grad()
 
-            # yield(UpdateInfo(self.vocabulary, batch, logits.cpu(), [loss.cpu().item(), discriminator_loss.cpu().item()], mode=mode))
-
-            yield(UpdateInfo(self.vocabulary, batch, logits, [loss.cpu().item(), discriminator_loss.cpu().item()], mode=mode))
+            yield(
+                UpdateInfo(
+                    self.vocabulary,
+                    batch,
+                    logits,
+                    [
+                        loss.cpu().item(),
+                        discriminator_loss.cpu().item(),
+                        model_loss.cpu().item(),
+                        fooling_loss.cpu().item()
+                    ],
+                    mode=mode)
+            )
 
     def train_and_evaluate_updates(self, evaluate_every=100):
         train_updates = self.updates(mode="train")

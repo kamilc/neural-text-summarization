@@ -3,13 +3,15 @@ from lib.metrics import Metrics
 
 class UpdateInfo(object):
     def __init__(self, vocabulary, batch, result, losses, mode):
-        loss, discriminator_loss = losses
+        loss, discriminator_loss, model_loss, fooling_loss = losses
 
         self.vocabulary = vocabulary
         self.batch = batch
         self.result = result
         self.loss = loss
         self.discriminator_loss = discriminator_loss
+        self.model_loss = model_loss
+        self.fooling_loss = fooling_loss
         self.mode = mode
 
     @property
@@ -33,4 +35,4 @@ class UpdateInfo(object):
 
     @cached_property
     def metrics(self):
-        return Metrics(self.mode, self.loss)
+        return Metrics(self.mode, self.loss, self.model_loss, self.fooling_loss)

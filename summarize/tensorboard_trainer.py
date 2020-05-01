@@ -20,7 +20,7 @@ class TensorboardTrainer(Trainer):
             if update_info.from_train:
                 cumulative_train_metrics += update_info.metrics
 
-                print(f"{update_info.batch.ix} => {update_info.metrics.loss}")
+                print(f"{update_info.batch.ix} \t| {update_info.metrics.loss} \t= {update_info.model_loss} \t+ {update_info.fooling_loss} \t| {update_info.discriminator_loss}")
 
                 # if update_info.batch.ix % 100 == 0:
                 #     with torch.no_grad():
@@ -33,6 +33,18 @@ class TensorboardTrainer(Trainer):
                     self.writer.add_scalar(
                         'loss/train',
                         cumulative_train_metrics.running_mean_loss(),
+                        update_info.batch.ix
+                    )
+
+                    self.writer.add_scalar(
+                        'model-loss/train',
+                        cumulative_train_metrics.running_mean_model_loss(),
+                        update_info.batch.ix
+                    )
+
+                    self.writer.add_scalar(
+                        'fooling-loss/train',
+                        cumulative_train_metrics.running_mean_fooling_loss(),
                         update_info.batch.ix
                     )
 

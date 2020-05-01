@@ -20,7 +20,7 @@ if 'articles' not in vars():
 
 articles['length'] = articles.apply(lambda row: len(row['text']), axis=1)
 orig = articles
-articles = orig[orig.length < 1200]#.sample(n=10)
+articles = orig[orig.length < 1200] #.sample(n=10)
 
 while len(articles[articles.set == 'test']) == 0:
     print("resampling")
@@ -31,22 +31,22 @@ print(f"Dataset size: {len(articles)}")
 vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
 
 trainer = TensorboardTrainer(
-    name='run-69',
+    name='run-72',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',
     discriminator_optimizer_class_name='Adam',
     model_args={
-        'hidden_size': 300,
+        'hidden_size': 512,
         'input_size': 300,
-        'num_layers': 2,
+        'num_layers': 4,
         'num_heads': 10,
         'dropout_rate': 0.2,
         'dim_feedforward_transformer': 512,
         'vocabulary_size': len(vocabulary)
     },
     discriminator_args={
-        'input_size': 300,
+        'input_size': 512,
         'hidden_size': 300,
     },
     optimizer_args={
@@ -55,7 +55,7 @@ trainer = TensorboardTrainer(
     discriminator_optimizer_args={
         'lr': 1e-4
     },
-    batch_size=16,
+    batch_size=8,
     device=torch.device('cuda')
 )
 

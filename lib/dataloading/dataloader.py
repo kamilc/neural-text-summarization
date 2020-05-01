@@ -16,5 +16,8 @@ class DataLoader(object):
         for start_ix in range(0, self.epoch_size, self.batch_size):
             end_ix = start_ix + self.batch_size
             if end_ix > len(self.dataset) - 1:
-                end_ix = len(dataset) - 1
-            yield self.dataset[ids[start_ix:end_ix]]
+                end_ix = len(self.dataset) - 1
+            try:
+                yield self.dataset[ids[start_ix:end_ix]]
+            except Exception as e:
+                pass

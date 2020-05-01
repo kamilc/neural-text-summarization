@@ -113,7 +113,17 @@ class SummarizeNet(NNModel):
 
     def decode(self, encoded, mask, modes):
         encoded = encoded.unsqueeze(axis=1).expand(
-            modes.shape[0], mask.shape[0], encoded.shape[1]
+            modes.shape[0], mask.shape[0]-1, encoded.shape[1]
+        )
+
+        modes = modes.unsqueeze(dim=1).unsqueeze(dim=2).expand(modes.shape[0],1,encoded.shape[2])
+
+        encoded = torch.cat(
+            [
+                modes,
+                encoded
+            ],
+            dim=1
         )
 
         decoded = torch.tanh(
