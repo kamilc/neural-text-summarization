@@ -31,7 +31,7 @@ print(f"Dataset size: {len(articles)}")
 vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
 
 trainer = TensorboardTrainer(
-    name='run-68',
+    name='run-69',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',
