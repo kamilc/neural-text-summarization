@@ -94,72 +94,66 @@ class SummarizeNet(NNModel):
 
         return mask.requires_grad_(False).to(self.device)
 
-    def encode(self, embeddings):
+    def encode(self, embeddings, lengths):
+        batch_size, seq_len, _ = embeddings.shape
+
+        paddings_mask = torch.arange(end=seq_len).unsqueeze(dim=0).expand((batch_size, seq_len)).to(self.device)
+        paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len))
+
         encoded = embeddings.transpose(1,0)
 
         for ix, encoder in enumerate(self.encoders):
-            encoded = encoder(encoded)
+            encoded = encoder(encoded, src_key_padding_mask=paddings_mask)
             encoded = self.encode_batch_norms[ix](encoded.transpose(2,1)).transpose(2,1)
 
         last_encoded = encoded
 
-        encoded = torch.tanh(
-            self.to_hidden(encoded)
-        )
+        encoded = encoded[0, :, :]
 
-        return self.to_hidden_batch_norm(
-            encoded.transpose(2,1)
-        ).transpose(2,1)[0, :, :]
+        encoded = self.to_hidden(encoded)
 
-    def decode(self, encoded, mask, modes):
-        encoded = encoded.unsqueeze(axis=1).expand(
-            modes.shape[0], mask.shape[0]-1, encoded.shape[1]
-        )
+        return encoded # self.to_hidden_batch_norm(encoded)
 
-        modes = modes.unsqueeze(dim=1).unsqueeze(dim=2).expand(modes.shape[0],1,encoded.shape[2])
+    def decode(self, embeddings, encoded, lengths, modes):
+        mask = self.mask_for(embeddings)
 
-        encoded = torch.cat(
-            [
-                modes,
-                encoded
-            ],
-            dim=1
-        )
+        encoded = self.from_hidden(encoded)
 
-        decoded = torch.tanh(
-            self.from_hidden(encoded)
-        )
-
-        decoded = self.from_hidden_batch_norm(
-            decoded.transpose(2,1)
-        ).transpose(2,1)
-
-        decoded = decoded.transpose(1,0)
+        decoded = embeddings.transpose(1,0)
 
         for ix, decoder in enumerate(self.decoders):
+            #import pdb; pdb.set_trace()
             decoded = decoder(
                 decoded,
-                torch.zeros_like(decoded),
+                encoded,
                 tgt_mask=mask
             )
             decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
 
-        return self.linear_logits(decoded.transpose(1,0))
+        decoded = decoded.transpose(1,0)[:, 0:(decoded.shape[0] - 1), :]
+
+        return self.linear_logits(decoded)
 
     def encode_positions(self, embeddings):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
 
-    def forward(self, embeddings, modes):
+    def add_start_token(self, embeddings, modes):
+        batch_size, _, dim = embeddings.shape
+
+        modes = modes.cos().unsqueeze(dim=1).unsqueeze(dim=1)
+        modes = modes.expand(batch_size, 1, dim)
+
+        return torch.cat([modes, embeddings], dim=1)
+
+    def forward(self, embeddings, lengths, modes):
         #noisy_embeddings = self.dropout(word_embeddings)
 
+        embeddings = self.add_start_token(embeddings, modes)
         embeddings = self.encode_positions(embeddings)
 
-        mask = self.mask_for(embeddings)
-
-        encoded = self.encode(embeddings)
-
-        decoded = self.decode(encoded, mask, modes)
+        encoded = self.encode(embeddings, lengths)
+        decoded = self.decode(embeddings, encoded, lengths, modes)
 
         return (
             decoded,

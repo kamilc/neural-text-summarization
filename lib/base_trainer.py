@@ -161,6 +161,7 @@ class BaseTrainer:
 
             logits, state = self.model(
                 batch.word_embeddings.to(self.device),
+                batch.lengths.to(self.device),
                 batch.mode.to(self.device)
             )
 
@@ -189,7 +190,7 @@ class BaseTrainer:
                 torch.ones_like(batch.mode).to(self.device)
             )
 
-            loss = model_loss + (0.01 * fooling_loss)
+            loss = model_loss # + (0.01 * fooling_loss)
 
             loss.backward()
             if mode == "train":

@@ -17,4 +17,9 @@ class WordsToVectors(object):
             axis=1
         )
 
+        sample['lengths'] = sample.swifter.progress_bar(False).apply(
+            lambda row: len(row['doc']),
+            axis=1
+        )
+
         return sample

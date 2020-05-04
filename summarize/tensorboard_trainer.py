@@ -63,7 +63,7 @@ class TensorboardTrainer(Trainer):
 
                 print(f"Eval: {update_info.metrics.loss}")
 
-            if update_info.batch.ix % 200 == 0 and update_info.batch.ix != 0:
+            if update_info.batch.ix % 600 == 0 and update_info.batch.ix != 0:
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
 

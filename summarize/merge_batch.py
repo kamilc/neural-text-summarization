@@ -32,4 +32,10 @@ class MergeBatch(object):
             ).astype(np.float32, copy=False)
         ).to(self.device)
 
+        sample['lengths'] = torch.tensor(
+            np.stack(
+                sample['lengths']
+            ).astype(np.float32, copy=False)
+        ).to(self.device)
+
         return sample

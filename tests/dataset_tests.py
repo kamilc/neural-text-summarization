@@ -99,8 +99,20 @@ class TestDataset(unittest.TestCase):
 
                     if batch.mode[i].item() == 1.0:
                         self.assertEqual(ds.iloc[0].headline.strip().lower(), batch.text[i])
+                        self.assertEqual(
+                            len(
+                                support.nlp(ds.iloc[0].headline.strip().lower())
+                            ),
+                            batch.lengths[i]
+                        )
                     else:
                         self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
+                        self.assertEqual(
+                            len(
+                                support.nlp(ds.iloc[0].text.strip().lower())
+                            ),
+                            batch.lengths[i]
+                        )
 
                     embeddings = torch.from_numpy(
                         word2vec(
