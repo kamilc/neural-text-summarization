@@ -31,23 +31,23 @@ print(f"Dataset size: {len(articles)}")
 vocabulary = Vocabulary(nlp, [articles.headline], size=10000)
 
 trainer = TensorboardTrainer(
-    name='run-79',
+    name='run-81',
     vocabulary=vocabulary,
     dataframe=articles,
     optimizer_class_name='Adam',
     discriminator_optimizer_class_name='Adam',
     model_args={
-        'hidden_size': 2048,
+        'hidden_size': 512,
         'input_size': 300,
-        'num_layers': 6,
+        'num_layers': 2,
         'num_heads': 10,
         'dropout_rate': 0.2,
-        'dim_feedforward_transformer': 1024,
+        'dim_feedforward_transformer': 512,
         'vocabulary_size': len(vocabulary)
     },
     discriminator_args={
-        'input_size': 2048,
-        'hidden_size': 2048,
+        'input_size': 512,
+        'hidden_size': 512,
     },
     optimizer_args={
         'lr': 1e-3

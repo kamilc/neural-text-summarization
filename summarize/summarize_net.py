@@ -97,8 +97,10 @@ class SummarizeNet(NNModel):
     def encode(self, embeddings, lengths):
         batch_size, seq_len, _ = embeddings.shape
 
+        embeddings = self.encode_positions(embeddings)
+
         paddings_mask = torch.arange(end=seq_len).unsqueeze(dim=0).expand((batch_size, seq_len)).to(self.device)
-        paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len))
+        paddings_mask = (paddings_mask + 1) > lengths.unsqueeze(dim=1).expand((batch_size, seq_len))
 
         encoded = embeddings.transpose(1,0)
 
@@ -115,18 +117,26 @@ class SummarizeNet(NNModel):
         return encoded # self.to_hidden_batch_norm(encoded)
 
     def decode(self, embeddings, encoded, lengths, modes):
+        batch_size, seq_len, _ = embeddings.shape
+
+        embeddings = self.add_start_token(embeddings, modes)
+        embeddings = self.encode_positions(embeddings)
+
         mask = self.mask_for(embeddings)
 
         encoded = self.from_hidden(encoded)
 
         decoded = embeddings.transpose(1,0)
 
+        paddings_mask = torch.arange(end=seq_len+1).unsqueeze(dim=0).expand((batch_size, seq_len+1)).to(self.device)
+        paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len+1))
+
         for ix, decoder in enumerate(self.decoders):
-            #import pdb; pdb.set_trace()
             decoded = decoder(
                 decoded,
                 encoded,
-                tgt_mask=mask
+                tgt_mask=mask,
+                tgt_key_padding_mask=paddings_mask
             )
             decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
 
@@ -148,9 +158,6 @@ class SummarizeNet(NNModel):
 
     def forward(self, embeddings, lengths, modes):
         #noisy_embeddings = self.dropout(word_embeddings)
-
-        embeddings = self.add_start_token(embeddings, modes)
-        embeddings = self.encode_positions(embeddings)
 
         encoded = self.encode(embeddings, lengths)
         decoded = self.decode(embeddings, encoded, lengths, modes)
