@@ -157,7 +157,7 @@ class BaseTrainer:
                 self.discriminator.eval()
 
             self.optimizer.zero_grad()
-            # self.discriminator_optimizer.zero_grad()
+            self.discriminator_optimizer.zero_grad()
 
             logits, state = self.model(
                 batch.word_embeddings.to(self.device),
@@ -165,18 +165,18 @@ class BaseTrainer:
                 batch.mode.to(self.device)
             )
 
-            # mode_probs_disc = self.discriminator(state.detach())
-            # mode_probs = self.discriminator(state)
+            mode_probs_disc = self.discriminator(state.detach())
+            mode_probs = self.discriminator(state)
 
-            # discriminator_loss = F.binary_cross_entropy(
-            #     mode_probs_disc,
-            #     batch.mode
-            # )
+            discriminator_loss = F.binary_cross_entropy(
+                mode_probs_disc,
+                batch.mode
+            )
 
-            # discriminator_loss.backward(retain_graph=True)
+            discriminator_loss.backward(retain_graph=True)
 
-            # if mode == "train":
-            #     self.discriminator_optimizer.step()
+            if mode == "train":
+                self.discriminator_optimizer.step()
 
             classes = self.vocabulary.encode(batch.text)
 
@@ -185,19 +185,19 @@ class BaseTrainer:
                 classes.long().reshape(-1).to(self.device)
             )
 
-            # fooling_loss = F.binary_cross_entropy(
-            #     mode_probs,
-            #     torch.ones_like(batch.mode).to(self.device)
-            # )
+            fooling_loss = F.binary_cross_entropy(
+                mode_probs,
+                torch.ones_like(batch.mode).to(self.device)
+            )
 
-            loss = model_loss # + (0.01 * fooling_loss)
+            loss = model_loss + (0.01 * fooling_loss)
 
             loss.backward()
             if mode == "train":
                 self.optimizer.step()
 
             self.optimizer.zero_grad()
-            # self.discriminator_optimizer.zero_grad()
+            self.discriminator_optimizer.zero_grad()
 
             yield(
                 UpdateInfo(
@@ -206,9 +206,9 @@ class BaseTrainer:
                     logits,
                     [
                         loss.cpu().item(),
-                        0, #discriminator_loss.cpu().item(),
+                        discriminator_loss.cpu().item(),
                         model_loss.cpu().item(),
-                        0 #fooling_loss.cpu().item()
+                        fooling_loss.cpu().item()
                     ],
                     mode=mode)
             )
