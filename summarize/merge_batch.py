@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import numpy as np
 
 class MergeBatch(object):
@@ -8,34 +9,26 @@ class MergeBatch(object):
     def stack_vectors(self, vectors):
         max_seq = max([vector.shape[0] for vector in vectors])
 
-        return np.stack(
+        return torch.stack(
             [
-                np.pad(vector, [(0, max_seq - vector.shape[0]), (0, 0)])
+                F.pad(vector, (0, 0, 0, max_seq - vector.shape[0]))
                 for vector in vectors
             ]
         )
 
     def __call__(self, sample):
-        del sample['doc']
-
         sample = sample.to_dict(orient="list")
 
-        sample['word_embeddings'] = torch.tensor(
-            self.stack_vectors(
-                sample['word_embeddings']
-            ).astype(np.float32, copy=False)
+        sample['word_embeddings'] = self.stack_vectors(
+            sample['word_embeddings']
         ).to(self.device)
 
         sample['mode'] = torch.tensor(
-            np.stack(
-                sample['mode']
-            ).astype(np.float32, copy=False)
+            sample['mode']
         ).to(self.device)
 
         sample['lengths'] = torch.tensor(
-            np.stack(
-                sample['lengths']
-            ).astype(np.float32, copy=False)
+            sample['lengths']
         ).to(self.device)
 
         return sample

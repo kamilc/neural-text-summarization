@@ -119,7 +119,7 @@ class SummarizeNet(NNModel):
     def decode(self, embeddings, encoded, lengths, modes):
         batch_size, seq_len, _ = embeddings.shape
 
-        embeddings = self.add_start_token(embeddings, modes)
+        embeddings = self.add_start_and_end_tokens(embeddings, modes)
         embeddings = self.encode_positions(embeddings)
 
         mask = self.mask_for(embeddings)
@@ -144,11 +144,49 @@ class SummarizeNet(NNModel):
 
         return self.linear_logits(decoded)
 
+    def decode_prediction(self, vocabulary, encoded1xH, lengths1x):
+        tokens = ['<start-short>']
+        last_token = None
+        seq_len = 1
+
+        encoded1xH = self.from_hidden(encoded1xH)
+
+        while last_token != '<end>' and seq_len < 500:
+            embeddings1xSxD = vocabulary.embed(tokens)
+            embeddings1xSxD = self.encode_positions(embeddings1xSxD)
+
+            maskSxS = self.mask_for(embeddings1xSxD)
+
+            decodedSx1xD = embeddings1xSxD.transpose(1,0)
+
+            paddings = torch.arange(end=seq_len+1).unsqueeze(dim=0)
+            paddings = paddings.expand((1, seq_len+1)).to(self.device)
+            paddings = paddings > lengths.unsqueeze(dim=1).expand((1, seq_len+1))
+
+            for ix, decoder in enumerate(self.decoders):
+                decodedSx1xD = decoder(
+                    decodedSx1xD,
+                    encoded1xH,
+                    tgt_mask=maskSxS,
+                    tgt_key_padding_mask=paddings
+                )
+                decodedSx1xD = self.decode_batch_norms[ix](decodedSx1xD.transpose(2,1))
+                decodedSx1xD = decodedSx1xD.transpose(2,1)
+
+            decoded1xSxD = decodedSx1xD.transpose(1,0)[:, 0:(decodedSx1xD.shape[0] - 1), :]
+            decoded1xSxV = self.linear_logits(decoded1xSxD)
+
+            word_id = F.softmax(decoded1xSxV[0, seq_len, :]).argmax()
+            last_token = vocabulary.words[word_id]
+            tokens.append(last_token)
+
+        return ' '.join(tokens).replace('\n', ' ').strip('❟ ❟ ❟')
+
     def encode_positions(self, embeddings):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
 
-    def add_start_token(self, embeddings, modes):
+    def add_start_and_end_tokens(self, embeddings, modes):
         batch_size, _, dim = embeddings.shape
 
         modes = modes.cos().unsqueeze(dim=1).unsqueeze(dim=1)
@@ -166,3 +204,31 @@ class SummarizeNet(NNModel):
             decoded,
             encoded
         )
+
+    def predict(self, vocabulary, embeddings, lengths):
+        previous_mode = self.training
+
+        self.eval()
+
+        batch_size, _, _ = embeddings.shape
+
+        results = []
+
+        for row in range(0, batch_size):
+            encoded = self.encode(
+                embeddings[row, :, :].unsqueeze(dim=0),
+                lengths[row].unsqueeze(dim=0)
+            )
+
+            results.append(
+                self.decode_prediction(
+                    vocabulary,
+                    encoded,
+                    lengths[row].unsqueeze(dim=0)
+                )
+            )
+
+        self.training = previous_mode
+
+        return results
+

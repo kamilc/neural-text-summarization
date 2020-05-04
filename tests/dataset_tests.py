@@ -22,51 +22,13 @@ from tests.support import Support
 support = Support()
 
 class TestDataset(unittest.TestCase):
-    def test_test_mode_yields_correctly(self):
-        dataset = ArticlesDataset(
-            support.articles,
-            "test",
-            transforms=[
-                TextToParsedDoc(support.nlp),
-                WordsToVectors(support.nlp),
-                SetAllToSummarizing(),
-                MergeBatch(torch.device("cuda")),
-            ]
-        )
-        loader = DataLoader(
-            dataset,
-            batch_size=8
-        )
-
-        current_batch_id = 0
-
-        for data in loader:
-            if current_batch_id > 10:
-                break
-            else:
-                current_batch_id += 1
-
-                batch = Batch(
-                    data,
-                    ix=current_batch_id
-                )
-
-                for i in range(0, len(batch.idx)):
-                    ds = support.articles[
-                        support.articles.normalized_title == batch.title[i]
-                    ]
-
-                    self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
-                    self.assertEqual(batch.mode[i], 1)
-
 
     def test_modes_are_assigned_correctly(self):
         dataset = ArticlesDataset(
             support.articles,
             "train",
             transforms=[
-                TextToParsedDoc(support.nlp),
-                WordsToVectors(support.nlp),
+                WordsToVectors(support.vocabulary),
                 MergeBatch(torch.device("cuda"))
             ]
         )
@@ -75,9 +37,11 @@ class TestDataset(unittest.TestCase):
             batch_size=8
         )
 
-        word2vec = WordsToVectors(support.nlp).document_embeddings
+        word2vec = WordsToVectors(support.vocabulary).document_embeddings
 
         current_batch_id = 0
+
+        dataset[0]
 
         for data in loader:
             if current_batch_id > 10:
@@ -114,10 +78,8 @@ class TestDataset(unittest.TestCase):
                             batch.lengths[i]
                         )
 
-                    embeddings = torch.from_numpy(
-                        word2vec(
-                            support.nlp(batch.text[i])
-                        )
+                    embeddings = word2vec(
+                        support.nlp(batch.text[i])
                     )
 
                     diff = batch.word_embeddings[i, :, :].shape[0] - embeddings.shape[0]

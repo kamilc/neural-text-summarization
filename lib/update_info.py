@@ -2,9 +2,10 @@ from cached_property import cached_property
 from lib.metrics import Metrics
 
 class UpdateInfo(object):
-    def __init__(self, vocabulary, batch, result, losses, mode):
+    def __init__(self, model, vocabulary, batch, result, losses, mode):
         loss, discriminator_loss, model_loss, fooling_loss = losses
 
+        self.model = model
         self.vocabulary = vocabulary
         self.batch = batch
         self.result = result
@@ -28,9 +29,10 @@ class UpdateInfo(object):
 
     @cached_property
     def decoded_inferred_texts(self):
-        return (
-            ' '.join([ self.vocabulary.words[id] for id in ids]).strip('❟')
-            for ids in self.decoded_word_ids
+        return self.model.predict(
+            self.vocabulary,
+            self.batch.word_embeddings,
+            self.batch.lengths
         )
 
     @cached_property

@@ -79,6 +79,7 @@ class TestTrainer(unittest.TestCase):
         )
 
         update_info = next(trainer.updates("train"))
+        import pdb; pdb.set_trace()
         inferred_text = next(update_info.decoded_inferred_texts)
 
         self.assertNotEqual(inferred_text, "")

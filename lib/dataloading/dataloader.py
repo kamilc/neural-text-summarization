@@ -17,7 +17,8 @@ class DataLoader(object):
             end_ix = start_ix + self.batch_size
             if end_ix > len(self.dataset) - 1:
                 end_ix = len(self.dataset) - 1
-            try:
-                yield self.dataset[ids[start_ix:end_ix]]
-            except Exception as e:
-                pass
+            #try:
+            yield self.dataset[ids[start_ix:end_ix]]
+            #except Exception as e:
+            #    print(f"Exception during data loading {e}")
+            #    pass

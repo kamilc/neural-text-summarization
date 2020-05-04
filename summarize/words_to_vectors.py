@@ -1,25 +1,34 @@
 import numpy as np
+import torch
 
 class WordsToVectors(object):
-    def __init__(self, nlp):
-        self.nlp = nlp
+    def __init__(self, vocabulary):
+        self.vocabulary = vocabulary
 
     def document_embeddings(self, doc):
-        return np.stack(
+        return self.vocabulary.embed(
             [
-                lexeme.vector for lexeme in doc
+                l.text.lower()
+                for l in doc
             ]
         )
 
     def __call__(self, sample):
-        sample['word_embeddings'] = sample.swifter.progress_bar(False).apply(
+        sample['doc'] = sample.apply(
+            lambda row: self.vocabulary.nlp(row['text']),
+            axis=1
+        )
+
+        sample['word_embeddings'] = sample.apply(
             lambda row: self.document_embeddings(row['doc']),
             axis=1
         )
 
-        sample['lengths'] = sample.swifter.progress_bar(False).apply(
+        sample['lengths'] = sample.apply(
             lambda row: len(row['doc']),
             axis=1
         )
+
+        del sample['doc']
 
         return sample

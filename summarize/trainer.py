@@ -7,9 +7,7 @@ from lib.base_trainer import BaseTrainer
 from summarize.summarize_net import SummarizeNet
 from summarize.discriminator_net import DiscriminatorNet
 from summarize.articles_dataset import ArticlesDataset
-from summarize.text_to_parsed_doc import TextToParsedDoc
 from summarize.words_to_vectors import WordsToVectors
-from summarize.set_all_to_summarizing import SetAllToSummarizing
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
@@ -33,8 +31,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "train",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
+                    WordsToVectors(self.vocabulary),
                     MergeBatch(self.device)
                 ]
             ),
@@ -42,9 +39,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "test",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
-                    SetAllToSummarizing(),
+                    WordsToVectors(self.vocabulary),
                     MergeBatch(self.device)
                 ]
             ),
@@ -52,8 +47,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "val",
                 transforms=[
-                    TextToParsedDoc(self.vocabulary.nlp),
-                    WordsToVectors(self.vocabulary.nlp),
+                    WordsToVectors(self.vocabulary),
                     MergeBatch(self.device)
                 ]
             )

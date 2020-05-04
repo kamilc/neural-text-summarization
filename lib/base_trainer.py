@@ -201,6 +201,7 @@ class BaseTrainer:
 
             yield(
                 UpdateInfo(
+                    self.model,
                     self.vocabulary,
                     batch,
                     logits,

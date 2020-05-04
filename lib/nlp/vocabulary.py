@@ -19,8 +19,13 @@ class Vocabulary(object):
             self._sorted_data = data['sorted_data']
         else:
             text = ""
-            words = ['❟']
-            index = {nlp.vocab['❟'].orth: 0}
+            words = ['<start>', '<end>', '❟']
+            index = {
+                nlp.vocab['<start-full>'].orth: 0,
+                nlp.vocab['<start-short>'].orth: 1,
+                nlp.vocab['<end>'].orth: 2,
+                nlp.vocab['❟'].orth: 3,
+            }
             counts = {}
 
             for serie in series:
@@ -93,14 +98,27 @@ class Vocabulary(object):
             ]
         )
 
+    def token_vector(self, token):
+        if token == '<start-full>':
+            return (torch.ones(300) * 0).cos()
+        elif token == '<start-short>':
+            return (torch.ones(300) * 1).cos()
+        elif token == '<end>':
+            return (torch.ones(300) * 2).cos()
+        else:
+            return torch.tensor(self.nlp.vocab[token.lower()].vector)
+
+    def embed(self, tokens):
+        """
+        Turns a list of string tokens into a vector 1xSxD
+        """
+
+        return torch.stack(
+            [
+                self.token_vector(token)
+                for token in tokens
+            ]
+        )
+
     def __len__(self):
         return self.size if self.size is not None else len(self._words)
-
-    def decode(self, probs):
-        """
-        probs: BxSxV tensor where:
-          B = batch size
-          S = sequence length
-          V = vocabu, 0, 0lary size
-        """
-        pass
