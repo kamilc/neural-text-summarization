@@ -74,9 +74,9 @@ class Vocabulary(object):
             if key < len(self):
                 return key
             else:
-                return 0
+                return 3
         else:
-            return 0
+            return 3
 
     def encode(self, texts):
         classes = [
@@ -84,10 +84,12 @@ class Vocabulary(object):
                 [
                     self.orth_to_word_id(l.orth)
                     for l in self.nlp(text.strip().lower())
-                ]
+                ] + [2] # adding <end> here
             )
             for text in texts
         ]
+
+        import pdb; pdb.set_trace()
 
         max_seq = max([c.shape[0] for c in classes])
 

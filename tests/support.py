@@ -32,8 +32,8 @@ class Support(object):
         return dataframe
 
     def capped_vocabulary(self, size):
-        return Vocabulary(self.nlp, [self.articles.headline], size=size)
+        return Vocabulary(self.nlp, [self.articles.text, self.articles.headline], size=size)
 
     @cached_property
     def vocabulary(self):
-        return Vocabulary(self.nlp, [self.articles.headline])
+        return Vocabulary(self.nlp, [self.articles.text, self.articles.headline])

@@ -180,6 +180,7 @@ class BaseTrainer:
 
             classes = self.vocabulary.encode(batch.text)
 
+            import pdb; pdb.set_trace()
             model_loss = F.cross_entropy(
                 logits.reshape(-1, logits.shape[2]).to(self.device),
                 classes.long().reshape(-1).to(self.device)

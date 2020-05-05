@@ -5,12 +5,14 @@ class WordsToVectors(object):
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
 
-    def document_embeddings(self, doc):
+    def document_embeddings(self, doc, mode):
         return self.vocabulary.embed(
+            ['<start-full>' if mode == 0.0 else '<start-short>'] +
             [
                 l.text.lower()
                 for l in doc
-            ]
+            ] +
+            ['<end>']
         )
 
     def __call__(self, sample):
@@ -20,12 +22,12 @@ class WordsToVectors(object):
         )
 
         sample['word_embeddings'] = sample.apply(
-            lambda row: self.document_embeddings(row['doc']),
+            lambda row: self.document_embeddings(row['doc'], row['mode']),
             axis=1
         )
 
         sample['lengths'] = sample.apply(
-            lambda row: len(row['doc']),
+            lambda row: len(row['doc']) + 2,
             axis=1
         )
 

@@ -67,7 +67,7 @@ class TestDataset(unittest.TestCase):
                             len(
                                 support.nlp(ds.iloc[0].headline.strip().lower())
                             ),
-                            batch.lengths[i]
+                            batch.lengths[i] - 2
                         )
                     else:
                         self.assertEqual(ds.iloc[0].text.strip().lower(), batch.text[i])
@@ -75,11 +75,12 @@ class TestDataset(unittest.TestCase):
                             len(
                                 support.nlp(ds.iloc[0].text.strip().lower())
                             ),
-                            batch.lengths[i]
+                            batch.lengths[i] - 2
                         )
 
                     embeddings = word2vec(
-                        support.nlp(batch.text[i])
+                        support.nlp(batch.text[i]),
+                        batch.mode[i]
                     )
 
                     diff = batch.word_embeddings[i, :, :].shape[0] - embeddings.shape[0]
