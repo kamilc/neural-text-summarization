@@ -152,35 +152,31 @@ class SummarizeNet(NNModel):
         encoded1xH = self.from_hidden(encoded1xH)
 
         while last_token != '<end>' and seq_len < 500:
-            embeddings1xSxD = vocabulary.embed(tokens)
+            embeddings1xSxD = vocabulary.embed(tokens).unsqueeze(dim=0).to(self.device)
             embeddings1xSxD = self.encode_positions(embeddings1xSxD)
 
             maskSxS = self.mask_for(embeddings1xSxD)
 
             decodedSx1xD = embeddings1xSxD.transpose(1,0)
 
-            paddings = torch.arange(end=seq_len+1).unsqueeze(dim=0)
-            paddings = paddings.expand((1, seq_len+1)).to(self.device)
-            paddings = paddings > lengths.unsqueeze(dim=1).expand((1, seq_len+1))
-
             for ix, decoder in enumerate(self.decoders):
                 decodedSx1xD = decoder(
                     decodedSx1xD,
                     encoded1xH,
                     tgt_mask=maskSxS,
-                    tgt_key_padding_mask=paddings
                 )
                 decodedSx1xD = self.decode_batch_norms[ix](decodedSx1xD.transpose(2,1))
                 decodedSx1xD = decodedSx1xD.transpose(2,1)
 
-            decoded1xSxD = decodedSx1xD.transpose(1,0)[:, 0:(decodedSx1xD.shape[0] - 1), :]
-            decoded1xSxV = self.linear_logits(decoded1xSxD)
+            decoded1x1xD = decodedSx1xD.transpose(1,0)[:, (seq_len-1):seq_len, :]
+            decoded1x1xV = self.linear_logits(decoded1x1xD)
 
-            word_id = F.softmax(decoded1xSxV[0, seq_len, :]).argmax()
+            word_id = F.softmax(decoded1x1xV[0, 0, :]).argmax().cpu().item()
             last_token = vocabulary.words[word_id]
             tokens.append(last_token)
+            seq_len += 1
 
-        return ' '.join(tokens).replace('\n', ' ').strip('❟ ❟ ❟')
+        return ' '.join(tokens[1:]).replace('\n', ' ').strip('❟ ❟ ❟')
 
     def encode_positions(self, embeddings):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)

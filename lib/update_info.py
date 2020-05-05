@@ -37,4 +37,18 @@ class UpdateInfo(object):
 
     @cached_property
     def metrics(self):
-        return Metrics(self.mode, self.loss, self.model_loss, self.fooling_loss)
+        text = None
+        predicted = None
+
+        if self.mode != "train":
+            text = self.batch.text
+            predicted = self.decoded_inferred_texts
+
+        return Metrics(
+            self.mode,
+            self.loss,
+            self.model_loss,
+            self.fooling_loss,
+            text,
+            predicted
+        )

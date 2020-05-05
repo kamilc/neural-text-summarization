@@ -1,9 +1,11 @@
 import statistics
+from rouge import Rouge
 import numpy as np
+from cached_property import cached_property
 import torch
 
 class Metrics(object):
-    def __init__(self, mode, loss=None, model_loss=None, fooling_loss=None):
+    def __init__(self, mode, loss=None, model_loss=None, fooling_loss=None, text=None, predicted=None):
         if torch.is_tensor(loss):
             loss = loss.cpu().item()
 
@@ -17,6 +19,11 @@ class Metrics(object):
         self.losses = [loss] if loss is not None else []
         self.model_losses = [model_loss] if model_loss is not None else []
         self.fooling_losses = [fooling_loss] if fooling_loss is not None else []
+        self.rouge_scores = []
+
+        if mode != "train" and text is not None and predicted is not None:
+            self.rouge = Rouge()
+            self.rouge_scores = self.rouge_1_fs(text, predicted)
 
     @classmethod
     def empty(cls, mode):
@@ -32,12 +39,22 @@ class Metrics(object):
         else:
             return statistics.mean(self.model_losses)
 
+    def rouge_1_fs(self, text, predicted):
+        return [s['rouge-1']['f'] for s in self.rouge.get_scores(text, predicted)]
+
     @property
     def loss(self):
         if len(self.losses) == 0:
             return 0
         else:
             return statistics.mean(self.losses)
+
+    @property
+    def rouge_score(self):
+        if len(self.rouge_scores) == 0:
+            return 0
+        else:
+            return statistics.mean(self.rouge_scores)
 
     @property
     def last_loss(self):
@@ -56,5 +73,6 @@ class Metrics(object):
         self.losses += other.losses
         self.model_losses += other.model_losses
         self.fooling_losses += other.fooling_losses
+        self.rouge_scores += other.rouge_scores
 
         return self

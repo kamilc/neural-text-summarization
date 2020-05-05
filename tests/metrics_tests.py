@@ -18,6 +18,14 @@ class TestMetrics(unittest.TestCase):
         self.assertEqual(cumulative_metrics.running_mean_loss(5), 7)
         self.assertEqual(cumulative_metrics.running_mean_loss(100), 4.5)
 
+    def test_rouge_works(self):
+        metrics = Metrics.empty("eval")
+
+        metrics += Metrics("eval", 0, 0, 0, "hello world", "yo world")
+
+        self.assertLess(metrics.rouge_score, 0.5)
+        self.assertGreater(metrics.rouge_score, 0.49)
+
 if __name__ == '__main__':
     doctest.testmod()
     unittest.main(

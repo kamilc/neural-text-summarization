@@ -4,3 +4,4 @@ spacy==2.2.4
 fastparquet==0.3.3
 swifter==0.302
 rich==0.8.12
+rouge==1.0.0
