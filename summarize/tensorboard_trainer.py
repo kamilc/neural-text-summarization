@@ -22,12 +22,12 @@ class TensorboardTrainer(Trainer):
 
                 print(f"{update_info.batch.ix} \t| {update_info.metrics.loss} \t= {update_info.model_loss} \t+ {update_info.fooling_loss} \t| {update_info.discriminator_loss}")
 
-                # if update_info.batch.ix % 100 == 0:
-                #     with torch.no_grad():
-                        # predicted = next(update_info.decoded_inferred_texts).replace('\n', ' ').strip('❟ ❟ ❟')
-                        # headline = update_info.batch.orig_headline[0].replace('\n', ' ').lower().strip()
-                        # text = update_info.batch.orig_text[0].replace('\n', ' ').lower().strip()
-                        # print(f"{update_info.batch.ix}\n\nTEXT:\n{text} \n\nHEADLINE:\n{headline} \n\nPREDICTED SUMMARY:\n{predicted}")
+                if update_info.batch.ix % 200 == 0:
+                    with torch.no_grad():
+                        predicted = update_info.decoded_inferred_texts[0].replace('\n', ' ').strip('❟ ❟ ❟')
+                        headline = update_info.batch.orig_headline[0].replace('\n', ' ').lower().strip()
+                        text = update_info.batch.orig_text[0].replace('\n', ' ').lower().strip()
+                        print(f"{update_info.batch.ix}\n\nTEXT:\n{text} \n\nHEADLINE:\n{headline} \n\nPREDICTED SUMMARY:\n{predicted}")
 
                 if update_info.batch.ix % 10 == 0:
                     self.writer.add_scalar(
@@ -54,11 +54,36 @@ class TensorboardTrainer(Trainer):
                 cumulative_evaluate_metrics += update_info.metrics
 
                 if len(cumulative_evaluate_metrics) == 10:
+                    with torch.no_grad():
+                        predicted = update_info.decoded_inferred_texts[0].replace('\n', ' ').strip('❟ ❟ ❟')
+                        headline = update_info.batch.orig_headline[0].replace('\n', ' ').lower().strip()
+                        text = update_info.batch.orig_text[0].replace('\n', ' ').lower().strip()
+                        print(f"{update_info.batch.ix}\n\nEVAL TEXT:\n{text} \n\nEVAL HEADLINE:\n{headline} \n\nEVAL PREDICTED SUMMARY:\n{predicted}")
+
+                        self.writer.add_text(
+                            'text/eval',
+                            text,
+                            int(update_info.batch.ix / evaluate_every)
+                        )
+
+                        self.writer.add_text(
+                            'headline/eval',
+                            headline,
+                            int(update_info.batch.ix / evaluate_every)
+                        )
+
+                        self.writer.add_text(
+                            'predicted/eval',
+                            predicted,
+                            int(update_info.batch.ix / evaluate_every)
+                        )
+
                     self.writer.add_scalar(
-                        'loss/eval',
-                        cumulative_evaluate_metrics.loss,
+                        'rouge-1/eval',
+                        cumulative_evaluate_metrics.rouge_score,
                         int(update_info.batch.ix / evaluate_every)
                     )
+
                     cumulative_evaluate_metrics = Metrics.empty(mode="eval")
 
                 print(f"Eval: {update_info.metrics.loss}")
@@ -66,33 +91,6 @@ class TensorboardTrainer(Trainer):
             if update_info.batch.ix % 600 == 0 and update_info.batch.ix != 0:
                 print(f"Saving checkpoint")
                 self.save_checkpoint()
-
-            # if update_info.batch.ix % 100 == 0 and update_info.batch.ix != 0:
-            #     test_update = next(test_updates)
-
-                # with torch.no_grad():
-                    # predicted = next(test_update.decoded_inferred_texts).replace('\n', ' ').strip('❟ ❟ ❟')
-                    # headline = test_update.batch.orig_headline[0].replace('\n', ' ').lower().strip()
-                    # text = test_update.batch.orig_text[0].replace('\n', ' ').lower().strip()
-                    # print(f"TEST\n\n{update_info.batch.ix}\n\nTEXT:\n{text} \n\nHEADLINE:\n{headline} \n\nPREDICTED SUMMARY:\n{predicted}")
-
-                    # self.writer.add_text(
-                    #     'test/original-text',
-                    #     text,
-                    #     update_info.batch.ix
-                    # )
-
-                    # self.writer.add_text(
-                    #     'test/original-headline',
-                    #     headline,
-                    #     update_info.batch.ix
-                    # )
-
-                    # self.writer.add_text(
-                    #     'test/predicted-summary',
-                    #     predicted,
-                    #     update_info.batch.ix
-                    # )
 
     def test(self):
         cumulative_metrics = Metrics.empty(mode="test")
