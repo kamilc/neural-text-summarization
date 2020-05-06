@@ -19,7 +19,7 @@ class Vocabulary(object):
             self._sorted_data = data['sorted_data']
         else:
             text = ""
-            words = ['<start>', '<end>', '❟']
+            words = ['<start-full>', '<start-short>', '<end>', '❟']
             index = {
                 nlp.vocab['<start-full>'].orth: 0,
                 nlp.vocab['<start-short>'].orth: 1,
@@ -78,18 +78,18 @@ class Vocabulary(object):
         else:
             return 3
 
-    def encode(self, texts):
+    def encode(self, texts, modes):
         classes = [
             torch.Tensor(
+                [ mode ] +
                 [
                     self.orth_to_word_id(l.orth)
                     for l in self.nlp(text.strip().lower())
-                ] + [2] # adding <end> here
+                ] +
+                [ 2 ]
             )
-            for text in texts
+            for text, mode in zip(texts, modes)
         ]
-
-        import pdb; pdb.set_trace()
 
         max_seq = max([c.shape[0] for c in classes])
 

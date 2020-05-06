@@ -202,6 +202,10 @@ class SummarizeNet(NNModel):
         )
 
     def predict(self, vocabulary, embeddings, lengths):
+        """
+        Caller should include the start and emnd tokens here
+        but we're going to ensure the start one is replaces by <start-short>
+        """
         previous_mode = self.training
 
         self.eval()
@@ -211,8 +215,11 @@ class SummarizeNet(NNModel):
         results = []
 
         for row in range(0, batch_size):
+            row_embeddings = embeddings[row, :, :].unsqueeze(dim=0)
+            row_embeddings[0, 0] = vocabulary.token_vector("<start-short>")
+
             encoded = self.encode(
-                embeddings[row, :, :].unsqueeze(dim=0),
+                row_embeddings,
                 lengths[row].unsqueeze(dim=0)
             )
 

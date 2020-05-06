@@ -178,12 +178,11 @@ class BaseTrainer:
             if mode == "train":
                 self.discriminator_optimizer.step()
 
-            classes = self.vocabulary.encode(batch.text)
+            classes = self.vocabulary.encode(batch.text, modes=batch.mode)
 
-            import pdb; pdb.set_trace()
             model_loss = F.cross_entropy(
-                logits.reshape(-1, logits.shape[2]).to(self.device),
-                classes.long().reshape(-1).to(self.device)
+                logits[:, 1:, :].reshape(-1, logits.shape[2]).to(self.device),
+                classes[:, 1:].long().reshape(-1).to(self.device)
             )
 
             fooling_loss = F.binary_cross_entropy(
