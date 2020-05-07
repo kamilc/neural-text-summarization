@@ -179,10 +179,12 @@ class BaseTrainer:
                 self.discriminator_optimizer.step()
 
             classes = self.vocabulary.encode(batch.text, modes=batch.mode)
+            classes = classes.roll(-1, dims=1)
+            classes[:,classes.shape[1]-1] = 3
 
             model_loss = F.cross_entropy(
-                logits[:, 1:, :].reshape(-1, logits.shape[2]).to(self.device),
-                classes[:, 1:].long().reshape(-1).to(self.device),
+                logits.reshape(-1, logits.shape[2]).to(self.device),
+                classes.long().reshape(-1).to(self.device),
                 ignore_index=3
             )
 

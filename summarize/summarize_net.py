@@ -83,6 +83,7 @@ class SummarizeNet(NNModel):
 
         self.to_hidden = nn.Linear(input_size, hidden_size)
         self.from_hidden = nn.Linear(hidden_size, input_size)
+        self.combine_decoded = nn.Linear(300+input_size, input_size)
 
         self.to(self.device)
 
@@ -119,22 +120,30 @@ class SummarizeNet(NNModel):
     def decode(self, embeddings, encoded, lengths, modes):
         batch_size, seq_len, _ = embeddings.shape
 
-        #embeddings = self.add_start_and_end_tokens(embeddings, modes)
         embeddings = self.encode_positions(embeddings)
 
         mask = self.mask_for(embeddings)
 
         encoded = self.from_hidden(encoded)
+        encoded = encoded.unsqueeze(dim=0).expand(seq_len, batch_size, -1)
 
         decoded = embeddings.transpose(1,0)
+        decoded = torch.cat(
+            [
+                encoded,
+                decoded
+            ],
+            axis=2
+        )
+        decoded = self.combine_decoded(decoded)
 
-        paddings_mask = torch.arange(end=seq_len+1).unsqueeze(dim=0).expand((batch_size, seq_len+1)).to(self.device)
-        paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len+1))
+        paddings_mask = torch.arange(end=seq_len).unsqueeze(dim=0).expand((batch_size, seq_len)).to(self.device)
+        paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len))
 
         for ix, decoder in enumerate(self.decoders):
             decoded = decoder(
                 decoded,
-                encoded,
+                torch.ones_like(decoded),
                 tgt_mask=mask,
                 tgt_key_padding_mask=paddings_mask
             )
@@ -181,14 +190,6 @@ class SummarizeNet(NNModel):
     def encode_positions(self, embeddings):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
-
-    # def add_start_and_end_tokens(self, embeddings, modes):
-    #     batch_size, _, dim = embeddings.shape
-
-    #     modes = modes.cos().unsqueeze(dim=1).unsqueeze(dim=1)
-    #     modes = modes.expand(batch_size, 1, dim)
-
-    #     return torch.cat([modes, embeddings], dim=1)
 
     def forward(self, embeddings, lengths, modes):
         #noisy_embeddings = self.dropout(word_embeddings)
