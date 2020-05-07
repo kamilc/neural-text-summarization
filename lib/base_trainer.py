@@ -182,7 +182,8 @@ class BaseTrainer:
 
             model_loss = F.cross_entropy(
                 logits[:, 1:, :].reshape(-1, logits.shape[2]).to(self.device),
-                classes[:, 1:].long().reshape(-1).to(self.device)
+                classes[:, 1:].long().reshape(-1).to(self.device),
+                ignore_index=3
             )
 
             fooling_loss = F.binary_cross_entropy(

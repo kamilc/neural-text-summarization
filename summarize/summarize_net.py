@@ -119,7 +119,7 @@ class SummarizeNet(NNModel):
     def decode(self, embeddings, encoded, lengths, modes):
         batch_size, seq_len, _ = embeddings.shape
 
-        embeddings = self.add_start_and_end_tokens(embeddings, modes)
+        #embeddings = self.add_start_and_end_tokens(embeddings, modes)
         embeddings = self.encode_positions(embeddings)
 
         mask = self.mask_for(embeddings)
@@ -140,7 +140,7 @@ class SummarizeNet(NNModel):
             )
             decoded = self.decode_batch_norms[ix](decoded.transpose(2,1)).transpose(2,1)
 
-        decoded = decoded.transpose(1,0)[:, 0:(decoded.shape[0] - 1), :]
+        decoded = decoded.transpose(1,0)# [:, 0:(decoded.shape[0] - 1), :]
 
         return self.linear_logits(decoded)
 
@@ -151,7 +151,7 @@ class SummarizeNet(NNModel):
 
         encoded1xH = self.from_hidden(encoded1xH)
 
-        while last_token != '<end>' and seq_len < 500:
+        while last_token != '<end>' and seq_len < 50:
             embeddings1xSxD = vocabulary.embed(tokens).unsqueeze(dim=0).to(self.device)
             embeddings1xSxD = self.encode_positions(embeddings1xSxD)
 
@@ -182,13 +182,13 @@ class SummarizeNet(NNModel):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
 
-    def add_start_and_end_tokens(self, embeddings, modes):
-        batch_size, _, dim = embeddings.shape
+    # def add_start_and_end_tokens(self, embeddings, modes):
+    #     batch_size, _, dim = embeddings.shape
 
-        modes = modes.cos().unsqueeze(dim=1).unsqueeze(dim=1)
-        modes = modes.expand(batch_size, 1, dim)
+    #     modes = modes.cos().unsqueeze(dim=1).unsqueeze(dim=1)
+    #     modes = modes.expand(batch_size, 1, dim)
 
-        return torch.cat([modes, embeddings], dim=1)
+    #     return torch.cat([modes, embeddings], dim=1)
 
     def forward(self, embeddings, lengths, modes):
         #noisy_embeddings = self.dropout(word_embeddings)

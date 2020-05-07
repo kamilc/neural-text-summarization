@@ -44,10 +44,15 @@ class Vocabulary(object):
                 reverse=True
             )
 
-            for ix, _ in track(sorted_data, description="Building vocabulary index"):
-                index[ix] = len(words)
-                words.append(nlp.vocab[ix].text)
+            for ix, _ in sorted_data: # track(sorted_data, description="Building vocabulary index"):
+                lexeme = nlp.vocab[ix]
+                if lexeme.vector.any():
+                    index[ix] = len(words)
+                    words.append(lexeme.text)
+                if len(words) % 100 == 0:
+                    print(f"\rWord count: {len(words)}", end='')
 
+            print('')
             self._words = words
             self._index = index
             self._sorted_data = sorted_data
@@ -95,7 +100,7 @@ class Vocabulary(object):
 
         return torch.stack(
             [
-                F.pad(vector, (0, max_seq - vector.shape[0]))
+                F.pad(vector, (0, max_seq - vector.shape[0]), value=3)
                 for vector in classes
             ]
         )
