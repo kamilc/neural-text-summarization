@@ -40,7 +40,10 @@ class Metrics(object):
             return statistics.mean(self.model_losses)
 
     def rouge_1_fs(self, text, predicted):
-        return [s['rouge-1']['f'] for s in self.rouge.get_scores(text, predicted)]
+        try:
+            return [s['rouge-1']['f'] for s in self.rouge.get_scores(text, predicted)]
+        except ValueError:
+            return 0
 
     @property
     def loss(self):

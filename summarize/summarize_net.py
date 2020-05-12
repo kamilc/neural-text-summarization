@@ -79,6 +79,10 @@ class SummarizeNet(NNModel):
             num_features=input_size
         )
 
+        self.combine_batch_norm = nn.BatchNorm1d(
+            num_features=input_size
+        )
+
         self.linear_logits = nn.Linear(input_size, self.vocabulary_size)
 
         self.to_hidden = nn.Linear(input_size, hidden_size)
@@ -136,6 +140,7 @@ class SummarizeNet(NNModel):
             axis=2
         )
         decoded = self.combine_decoded(decoded)
+        decoded = self.combine_batch_norm(decoded.transpose(2,1)).transpose(2,1)
 
         paddings_mask = torch.arange(end=seq_len).unsqueeze(dim=0).expand((batch_size, seq_len)).to(self.device)
         paddings_mask = paddings_mask > lengths.unsqueeze(dim=1).expand((batch_size, seq_len))
@@ -166,12 +171,23 @@ class SummarizeNet(NNModel):
 
             maskSxS = self.mask_for(embeddings1xSxD)
 
+            encodedSx1xH = encoded1xH.unsqueeze(dim=0).expand(seq_len, 1, -1)
+
             decodedSx1xD = embeddings1xSxD.transpose(1,0)
+            decodedSx1xD = torch.cat(
+                [
+                    encodedSx1xH,
+                    decodedSx1xD
+                ],
+                axis=2
+            )
+            decodedSx1xD = self.combine_decoded(decodedSx1xD)
+            decodedSx1xD = self.combine_batch_norm(decodedSx1xD.transpose(2,1)).transpose(2,1)
 
             for ix, decoder in enumerate(self.decoders):
                 decodedSx1xD = decoder(
                     decodedSx1xD,
-                    encoded1xH,
+                    torch.ones_like(decodedSx1xD),
                     tgt_mask=maskSxS,
                 )
                 decodedSx1xD = self.decode_batch_norms[ix](decodedSx1xD.transpose(2,1))
