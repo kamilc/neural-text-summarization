@@ -6,12 +6,12 @@ from rich.progress import track
 from pathlib import Path
 
 class Vocabulary(object):
-    def __init__(self, nlp, series, size=None):
+    def __init__(self, nlp, series, size=None, name="vocabulary"):
         self.nlp = nlp
         self.size = size
 
-        if Path("tmp/vocabulary.pickle").exists():
-            with open('tmp/vocabulary.pickle', 'rb') as handle:
+        if Path(f"tmp/{name}.pickle").exists():
+            with open(f"tmp/{name}.pickle", 'rb') as handle:
                 data = pickle.load(handle)
 
             self._words = data['words']
@@ -57,7 +57,7 @@ class Vocabulary(object):
             self._index = index
             self._sorted_data = sorted_data
 
-            with open('tmp/vocabulary.pickle', 'wb') as handle:
+            with open(f"tmp/{name}.pickle", 'wb') as handle:
                 pickle.dump(
                     {
                         'words': self._words,

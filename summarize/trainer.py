@@ -7,14 +7,13 @@ from lib.base_trainer import BaseTrainer
 from summarize.summarize_net import SummarizeNet
 from summarize.discriminator_net import DiscriminatorNet
 from summarize.articles_dataset import ArticlesDataset
+from summarize.rocstories_dataset import RocstoriesDataset
 from summarize.words_to_vectors import WordsToVectors
 from summarize.merge_batch import MergeBatch
 
 class Trainer(BaseTrainer):
-    def __init__(self, vocabulary, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Trainer, self).__init__(*args, **kwargs)
-
-        self.vocabulary = vocabulary
 
     @property
     def model_class(self):
@@ -26,8 +25,9 @@ class Trainer(BaseTrainer):
 
     @cached_property
     def datasets(self):
+        klass = ArticlesDataset if self.dataset_class_name == "ArticlesDataset" else RocstoriesDataset
         return {
-            "train": ArticlesDataset(
+            "train": klass(
                 self.dataframe,
                 "train",
                 transforms=[
@@ -35,7 +35,7 @@ class Trainer(BaseTrainer):
                     MergeBatch(self.device)
                 ]
             ),
-            "test":  ArticlesDataset(
+            "test":  klass(
                 self.dataframe,
                 "test",
                 transforms=[
@@ -43,7 +43,7 @@ class Trainer(BaseTrainer):
                     MergeBatch(self.device)
                 ]
             ),
-            "val":  ArticlesDataset(
+            "val":  klass(
                 self.dataframe,
                 "val",
                 transforms=[

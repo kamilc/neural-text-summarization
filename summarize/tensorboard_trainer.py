@@ -32,19 +32,19 @@ class TensorboardTrainer(Trainer):
                 if update_info.batch.ix % 10 == 0:
                     self.writer.add_scalar(
                         'loss/train',
-                        cumulative_train_metrics.running_mean_loss(),
+                        cumulative_train_metrics.loss,
                         update_info.batch.ix
                     )
 
                     self.writer.add_scalar(
                         'model-loss/train',
-                        cumulative_train_metrics.running_mean_model_loss(),
+                        cumulative_train_metrics.loss,
                         update_info.batch.ix
                     )
 
                     self.writer.add_scalar(
                         'fooling-loss/train',
-                        cumulative_train_metrics.running_mean_fooling_loss(),
+                        cumulative_train_metrics.loss,
                         update_info.batch.ix
                     )
 

@@ -10,17 +10,20 @@ from lib.update_info import UpdateInfo
 from lib.dataloading.dataloader import DataLoader
 
 class BaseTrainer:
-    def __init__(self, name, dataframe,
+    def __init__(self, name, dataframe, dataset_class_name,
                  optimizer_class_name,
                  discriminator_optimizer_class_name,
                  model_args, optimizer_args,
                  discriminator_args, discriminator_optimizer_args,
+                 vocabulary,
                  batch_size,
                  device
                 ):
         self.name = name
 
+        self.vocabulary = vocabulary
         self.dataframe = dataframe
+        self.dataset_class_name = dataset_class_name
         self.device = device
         self.batch_size = batch_size
 
@@ -28,6 +31,7 @@ class BaseTrainer:
         self.discriminator_optimizer_class_name = discriminator_optimizer_class_name
 
         self.model_args = model_args
+        self.model_args['vocabulary_size'] = len(vocabulary)
         self.optimizer_args = optimizer_args
 
         self.discriminator_args = discriminator_args
@@ -51,7 +55,10 @@ class BaseTrainer:
         try:
             return self.model_class.load(f"{self.checkpoint_path}/model.pth").to(self.device)
         except FileNotFoundError:
-            return self.model_class(self.device, **self.model_args).to(self.device)
+            return self.model_class(
+                self.device,
+                **self.model_args
+            ).to(self.device)
 
     @cached_property
     def discriminator(self):
@@ -63,6 +70,8 @@ class BaseTrainer:
     @cached_property
     def optimizer(self):
         class_ = getattr(torch.optim, self.optimizer_class_name)
+
+        print(f"{self.optimizer_args}")
 
         return class_(self.model.parameters(), **self.optimizer_args)
 
