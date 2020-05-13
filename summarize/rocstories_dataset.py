@@ -1,6 +1,7 @@
 import torch
 import re
 import numpy as np
+import random
 import pandas as pd
 from torch.utils.data import Dataset
 
@@ -16,11 +17,16 @@ class RocstoriesDataset(Dataset):
     def __len__(self):
         return 6*len(self.data)
 
-    def get_orig_text(self, row):
+    def get_orig_text(self, row, shuffle=False):
+        indices = list(range(1, 6))
+
+        if shuffle:
+            random.shuffle(indices)
+
         return ' '.join(
             [
                 row[f"sentence{i}"]
-                for i in range(1, 6)
+                for i in indices
             ]
         )
 
@@ -28,8 +34,10 @@ class RocstoriesDataset(Dataset):
         sentence_columns = [ f"sentence{i}" for i in range(1,6) ]
         in_story_id = row['asked_id'] % 6
 
+        should_shuffle = random.random() < 0.5
+
         if in_story_id == 0:
-            return self.get_orig_text(row)
+            return self.get_orig_text(row, shuffle=should_shuffle)
         else:
             return row[f"sentence{in_story_id}"]
 

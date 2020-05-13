@@ -41,7 +41,7 @@ class Metrics(object):
 
     def rouge_1_fs(self, text, predicted):
         try:
-            return [s['rouge-1']['f'] for s in self.rouge.get_scores(text, predicted)]
+            return [s['rouge-1']['f'] for s in self.rouge.get_scores(predicted, text)]
         except ValueError:
             return 0
 

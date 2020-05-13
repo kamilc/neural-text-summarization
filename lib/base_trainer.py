@@ -193,11 +193,17 @@ class BaseTrainer:
             classes = classes.roll(-1, dims=1)
             classes[:,classes.shape[1]-1] = 3
 
-            model_loss = F.cross_entropy(
-                logits.reshape(-1, logits.shape[2]).to(self.device),
-                classes.long().reshape(-1).to(self.device),
-                ignore_index=3
-            )
+            model_loss = torch.tensor(0).cuda()
+
+            #import pdb; pdb.set_trace()
+            if logits.shape[0:2] == classes.shape:
+                model_loss = F.cross_entropy(
+                    logits.reshape(-1, logits.shape[2]).to(self.device),
+                    classes.long().reshape(-1).to(self.device),
+                    ignore_index=3
+                )
+            else:
+                print(f"WARNING: Skipping model loss for inconsistency between logits and classes shapes")
 
             fooling_loss = F.binary_cross_entropy(
                 mode_probs,

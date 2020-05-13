@@ -208,9 +208,9 @@ class SummarizeNet(NNModel):
         return self.pos_encoder(embeddings).transpose(1,0)
 
     def forward(self, embeddings, lengths, modes):
-        #noisy_embeddings = self.dropout(word_embeddings)
+        noisy_embeddings = self.dropout(embeddings)
 
-        encoded = self.encode(embeddings, lengths)
+        encoded = self.encode(noisy_embeddings, lengths)
         decoded = self.decode(embeddings, encoded, lengths, modes)
 
         return (
