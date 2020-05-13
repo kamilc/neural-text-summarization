@@ -155,6 +155,8 @@ class BaseTrainer:
         raise NotImplementedError
 
     def updates(self, mode="train"):
+        print(f"Batch size: {self.batch_size}")
+
         batches = self.batches(mode)
 
         for batch in batches:
