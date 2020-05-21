@@ -15,7 +15,7 @@ class RocstoriesDataset(Dataset):
         self.mode = mode
 
     def __len__(self):
-        return 6*len(self.data)
+        return 2*len(self.data)
 
     def get_orig_text(self, row, shuffle=False):
         indices = list(range(1, 6))
@@ -31,14 +31,12 @@ class RocstoriesDataset(Dataset):
         )
 
     def get_text(self, row):
-        sentence_columns = [ f"sentence{i}" for i in range(1,6) ]
-        in_story_id = row['asked_id'] % 6
-
         should_shuffle = random.random() < 0.5
 
-        if in_story_id == 0:
+        if row['asked_id'] % 2 == 0:
             return self.get_orig_text(row, shuffle=should_shuffle)
         else:
+            in_story_id = random.choice(range(1,6))
             return row[f"sentence{in_story_id}"]
 
     def __getitem__(self, idx):
@@ -52,7 +50,7 @@ class RocstoriesDataset(Dataset):
         else:
             _idx = [ idx ]
 
-        _ids = [ (i - (i % 6))/6 for i in _idx]
+        _ids = [ (i - (i % 2))/2 for i in _idx]
         data = self.data.iloc[_ids, :]
 
         data['asked_id'] = _idx
@@ -60,7 +58,7 @@ class RocstoriesDataset(Dataset):
         data = pd.DataFrame(
             {
                 'set': [self.mode for _ in range(0, len(_ids))],
-                'mode': np.array([ (0.0 if i % 6 == 0 else 1.0) for i in _idx ]),
+                'mode': np.array([ (0.0 if i % 2 == 0 else 1.0) for i in _idx ]),
                 'orig_text': data.apply(self.get_orig_text, axis=1),
                 'orig_headline': "<none>",
                 'text': data.apply(self.get_text, axis=1),

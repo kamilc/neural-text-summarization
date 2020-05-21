@@ -61,6 +61,37 @@ class TestModel(unittest.TestCase):
         self.assertEqual(state.shape[1], hidden_size)
         self.assertEqual(len(state.shape), 2)
 
+    def test_mean_pool_works(self):
+        batch_size = 2
+        seq_len = 10
+        hidden_size = 16
+        num_layers = 2
+        vocabulary_size = 10
+        dropout_rate = 0.5
+
+        model = SummarizeNet(
+            device='cuda',
+            hidden_size=hidden_size,
+            input_size=300,
+            num_heads=10,
+            dim_feedforward_transformer=128,
+            num_layers=num_layers,
+            dropout_rate=dropout_rate,
+            vocabulary_size=vocabulary_size,
+            encoder_pool = "mean"
+        )
+
+        embeddings = torch.rand((batch_size, seq_len, 300)).cuda()
+        lengths = torch.randint(2, seq_len, (batch_size,)).cuda()
+        modes = torch.rand((batch_size)).cuda()
+
+        decoded, state = model(
+            embeddings,
+            lengths,
+            modes
+        )
+
+
 if __name__ == '__main__':
     doctest.testmod()
     unittest.main(

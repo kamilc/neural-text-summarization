@@ -15,6 +15,7 @@ num_layers = 3
 num_heads = 10
 dropout_rate = 0.1
 dim_feedforward_transformer = 1024
+encoder_pool = "first"
 
 [experiment.discriminator_args]
 input_size = 512

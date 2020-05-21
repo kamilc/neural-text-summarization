@@ -210,7 +210,7 @@ class BaseTrainer:
                 torch.ones_like(batch.mode).to(self.device)
             )
 
-            loss = model_loss + (0.01 * fooling_loss)
+            loss = model_loss + (0.1 * fooling_loss)
 
             loss.backward()
             if mode == "train":

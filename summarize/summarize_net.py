@@ -9,7 +9,7 @@ class SummarizeNet(NNModel):
     def __init__(self, device, hidden_size, input_size,
                  num_heads, dim_feedforward_transformer,
                  num_layers, dropout_rate,
-                 vocabulary_size):
+                 vocabulary_size, encoder_pool = "first"):
         super(SummarizeNet, self).__init__(
             device=device,
             hidden_size=hidden_size,
@@ -25,6 +25,7 @@ class SummarizeNet(NNModel):
         self.hidden_size = hidden_size
         self.input_size = input_size
         self.vocabulary_size = vocabulary_size
+        self.encoder_pool = encoder_pool
 
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
         self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
@@ -99,6 +100,12 @@ class SummarizeNet(NNModel):
 
         return mask.requires_grad_(False).to(self.device)
 
+    def pool_encoded(self, encoded, lengths):
+        if self.encoder_pool == "first":
+            return encoded[0, :, :]
+        else:
+            return (encoded.sum(dim=0) / lengths.unsqueeze(axis=1).expand((-1,300)))
+
     def encode(self, embeddings, lengths):
         batch_size, seq_len, _ = embeddings.shape
 
@@ -115,7 +122,7 @@ class SummarizeNet(NNModel):
 
         last_encoded = encoded
 
-        encoded = encoded[0, :, :]
+        encoded = self.pool_encoded(encoded, lengths)
 
         encoded = self.to_hidden(encoded)
 
