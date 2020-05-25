@@ -192,7 +192,12 @@ class BaseTrainer:
             if mode == "train":
                 self.discriminator_optimizer.step()
 
-            classes = self.vocabulary.encode(batch.text, modes=batch.mode)
+            text = batch.text.copy()
+
+            if self.no_period_trick:
+                text = [txt.replace('.', '') for txt in text]
+
+            classes = self.vocabulary.encode(text, modes=batch.mode)
             classes = classes.roll(-1, dims=1)
             classes[:,classes.shape[1]-1] = 3
 

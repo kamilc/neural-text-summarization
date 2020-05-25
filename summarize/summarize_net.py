@@ -28,7 +28,6 @@ class SummarizeNet(NNModel):
         self.encoder_pool = encoder_pool
 
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
-        self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
 
         self.to_input_batch_norm = nn.BatchNorm1d(
             num_features=input_size
@@ -214,10 +213,26 @@ class SummarizeNet(NNModel):
         embeddings = embeddings.transpose(1,0) * math.sqrt(self.input_size)
         return self.pos_encoder(embeddings).transpose(1,0)
 
-    def forward(self, embeddings, lengths, modes):
-        noisy_embeddings = self.dropout(embeddings)
+    def mask_dropout(self, embeddings, lengths):
+      embeddings = embeddings.clone()
 
-        encoded = self.encode(noisy_embeddings, lengths)
+      if self.training:
+          max_len = embeddings.shape[1]
+          batch_size = lengths.shape[0]
+
+          mask = torch.arange(max_len).to(embeddings.device).unsqueeze(0).expand(batch_size, max_len)
+          mask = mask < (lengths + 1).unsqueeze(dim=1).expand(batch_size, max_len)
+          mask[:, 0] = False
+
+          # TODO: use dropout parameter
+          embeddings[mask] = F.dropout(embeddings[mask], p=0.25, training=self.training)
+
+      return embeddings
+
+    def forward(self, embeddings, lengths, modes):
+        noisy_embeddings = self.mask_dropout(embeddings, lengths)
+
+        encoded = self.encode(noisy_embeddings[:, 1:, :], lengths-1)
         decoded = self.decode(embeddings, encoded, lengths, modes)
 
         return (
