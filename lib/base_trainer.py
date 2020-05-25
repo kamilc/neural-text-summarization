@@ -17,7 +17,8 @@ class BaseTrainer:
                  discriminator_args, discriminator_optimizer_args,
                  vocabulary,
                  batch_size,
-                 device
+                 device,
+                 no_period_trick = False
                 ):
         self.name = name
 
@@ -26,6 +27,8 @@ class BaseTrainer:
         self.dataset_class_name = dataset_class_name
         self.device = device
         self.batch_size = batch_size
+
+        self.no_period_trick = no_period_trick
 
         self.optimizer_class_name = optimizer_class_name
         self.discriminator_optimizer_class_name = discriminator_optimizer_class_name
@@ -231,7 +234,9 @@ class BaseTrainer:
                         model_loss.cpu().item(),
                         fooling_loss.cpu().item()
                     ],
-                    mode=mode)
+                    mode=mode,
+                    no_period_trick=self.no_period_trick
+                )
             )
 
     def train_and_evaluate_updates(self, evaluate_every=100):

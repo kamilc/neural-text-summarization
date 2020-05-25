@@ -7,6 +7,7 @@ optimizer_class_name = "Adam"
 discriminator_optimizer_class_name = "Adam"
 batch_size = 64
 device = "cuda"
+no_period_trick = false
 
 [experiment.model_args]
 hidden_size = 512

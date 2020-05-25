@@ -1,8 +1,9 @@
 from cached_property import cached_property
 from lib.metrics import Metrics
+import torch
 
 class UpdateInfo(object):
-    def __init__(self, model, vocabulary, batch, result, losses, mode):
+    def __init__(self, model, vocabulary, batch, result, losses, mode, no_period_trick=False):
         loss, discriminator_loss, model_loss, fooling_loss = losses
 
         self.model = model
@@ -14,6 +15,7 @@ class UpdateInfo(object):
         self.model_loss = model_loss
         self.fooling_loss = fooling_loss
         self.mode = mode
+        self.no_period_trick = no_period_trick
 
     @property
     def from_train(self):
@@ -28,10 +30,27 @@ class UpdateInfo(object):
         return self.result.argmax(dim=2).tolist()
 
     @cached_property
+    def period_vector(self, device):
+        return torch.tensor(
+            self.vocabulary.nlp.vocab["."].vector
+        ).to(device)
+
+    @cached_property
     def decoded_inferred_texts(self):
+        embeddings = self.batch.word_embeddings
+
+        if self.no_period_trick:
+            embeddings = embeddings.clone()
+
+            period_vector = self.period_vector(
+                embeddings.device
+            )
+
+            embeddings[ torch.eq(embeddings, period_vector).all(dim=2) ] = 0
+
         return self.model.predict(
             self.vocabulary,
-            self.batch.word_embeddings,
+            embeddings,
             self.batch.lengths
         )
 

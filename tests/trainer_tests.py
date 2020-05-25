@@ -24,6 +24,7 @@ class TestTrainer(unittest.TestCase):
                 vocabulary=support.vocabulary,
                 dataframe=support.articles,
                 optimizer_class_name='Adam',
+                dataset_class_name='ArticlesDataset',
                 discriminator_optimizer_class_name='Adam',
                 model_args={
                     'hidden_size': 32,
@@ -58,6 +59,7 @@ class TestTrainer(unittest.TestCase):
             vocabulary=vocabulary,
             dataframe=support.articles,
             optimizer_class_name='Adam',
+            dataset_class_name='ArticlesDataset',
             discriminator_optimizer_class_name='Adam',
             model_args={
                 'hidden_size': 32,
