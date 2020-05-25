@@ -2,8 +2,9 @@ import numpy as np
 import torch
 
 class WordsToVectors(object):
-    def __init__(self, vocabulary):
+    def __init__(self, vocabulary, no_period_trick=False):
         self.vocabulary = vocabulary
+        self.no_period_trick = no_period_trick
 
     def document_embeddings(self, doc, mode):
         return self.vocabulary.embed(
@@ -15,9 +16,15 @@ class WordsToVectors(object):
             ['<end>']
         )
 
+    def to_document(self, text):
+        txt = text.replace('.', '') if self.no_period_trick else text
+
+        return self.vocabulary.nlp(txt)
+
     def __call__(self, sample):
+        # import pdb; pdb.set_trace()
         sample['doc'] = sample.apply(
-            lambda row: self.vocabulary.nlp(row['text']),
+            lambda row: self.to_document(row['text']),
             axis=1
         )
 

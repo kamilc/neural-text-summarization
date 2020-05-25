@@ -30,23 +30,21 @@ class UpdateInfo(object):
         return self.result.argmax(dim=2).tolist()
 
     @cached_property
-    def period_vector(self, device):
+    def period_vector(self):
         return torch.tensor(
             self.vocabulary.nlp.vocab["."].vector
-        ).to(device)
+        )
 
     @cached_property
     def decoded_inferred_texts(self):
         embeddings = self.batch.word_embeddings
 
-        if self.no_period_trick:
-            embeddings = embeddings.clone()
+        # if self.no_period_trick:
+        #     embeddings = embeddings.clone()
 
-            period_vector = self.period_vector(
-                embeddings.device
-            )
+        #     period_vector = self.period_vector.to(embeddings.device)
 
-            embeddings[ torch.eq(embeddings, period_vector).all(dim=2) ] = 0
+        #     embeddings[ torch.eq(embeddings, period_vector).all(dim=2) ] = 0
 
         return self.model.predict(
             self.vocabulary,

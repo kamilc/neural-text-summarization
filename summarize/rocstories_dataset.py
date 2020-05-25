@@ -31,7 +31,8 @@ class RocstoriesDataset(Dataset):
         )
 
     def get_text(self, row):
-        should_shuffle = random.random() < 0.5
+        # TODO: cleanup
+        should_shuffle = False # random.random() < 0.5
 
         if row['asked_id'] % 2 == 0:
             return self.get_orig_text(row, shuffle=should_shuffle)

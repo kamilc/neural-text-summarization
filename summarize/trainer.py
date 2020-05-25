@@ -31,7 +31,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "train",
                 transforms=[
-                    WordsToVectors(self.vocabulary),
+                    WordsToVectors(self.vocabulary, self.no_period_trick),
                     MergeBatch(self.device)
                 ]
             ),
@@ -39,7 +39,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "test",
                 transforms=[
-                    WordsToVectors(self.vocabulary),
+                    WordsToVectors(self.vocabulary, self.no_period_trick),
                     MergeBatch(self.device)
                 ]
             ),
@@ -47,7 +47,7 @@ class Trainer(BaseTrainer):
                 self.dataframe,
                 "val",
                 transforms=[
-                    WordsToVectors(self.vocabulary),
+                    WordsToVectors(self.vocabulary, self.no_period_trick),
                     MergeBatch(self.device)
                 ]
             )
