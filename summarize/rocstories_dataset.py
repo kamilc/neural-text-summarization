@@ -15,7 +15,7 @@ class RocstoriesDataset(Dataset):
         self.mode = mode
 
     def __len__(self):
-        return 4*len(self.data)
+        return 6*len(self.data)
 
     def get_orig_text(self, row, shuffle=False):
         indices = list(range(1, 6))
@@ -30,13 +30,18 @@ class RocstoriesDataset(Dataset):
             ]
         )
 
-    def get_text(self, row):
-        should_shuffle = random.random() < 0.5
+    def get_clean_text(self, row):
+        return get_text(row, False)
 
-        if row['asked_id'] % 4 == 0:
+    def get_text(self, row, should_shuffle=None):
+        if should_shuffle is None:
+            should_shuffle = random.random() < 0.5
+
+        in_story_id = row['asked_id'] % 6
+
+        if in_story_id == 0:
             return self.get_orig_text(row, shuffle=should_shuffle)
         else:
-            in_story_id = random.choice(range(1,6))
             return row[f"sentence{in_story_id}"]
 
     def __getitem__(self, idx):
@@ -50,7 +55,7 @@ class RocstoriesDataset(Dataset):
         else:
             _idx = [ idx ]
 
-        _ids = [ (i - (i % 4))/4 for i in _idx]
+        _ids = [ (i - (i % 6))/6 for i in _idx]
         data = self.data.iloc[_ids, :]
 
         data['asked_id'] = _idx
@@ -62,6 +67,7 @@ class RocstoriesDataset(Dataset):
                 'orig_text': data.apply(self.get_orig_text, axis=1),
                 'orig_headline': "<none>",
                 'text': data.apply(self.get_text, axis=1),
+                'clean_text': data.apply(self.get_clean_text, axis=1),
                 'title': data['storytitle'],
                 'idx': np.array([ i for i in _idx ]),
             }

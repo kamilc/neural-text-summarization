@@ -28,7 +28,7 @@ class WordsToVectors(object):
         )
 
         sample['clean_doc'] = sample.apply(
-            lambda row: self.to_document(row['orig_text']),
+            lambda row: self.to_document(row['clean_text']),
             axis=1
         )
 

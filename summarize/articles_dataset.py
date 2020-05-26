@@ -39,6 +39,7 @@ class ArticlesDataset(Dataset):
                 'orig_text': data['text'],
                 'orig_headline': data['headline'],
                 'text': data.apply(lambda row: re.sub("(\\s,*)+", " ", (row['text'].strip().lower() if row['set'] == 'test' or row['asked_id'] % 2 == 0 else row['headline'].strip().lower())), axis=1),
+                'clean_text': data.apply(lambda row: re.sub("(\\s,*)+", " ", (row['text'].strip().lower() if row['set'] == 'test' or row['asked_id'] % 2 == 0 else row['headline'].strip().lower())), axis=1),
                 'title': data['normalized_title'],
                 'idx': np.array([ i for i in _idx ]),
             }
