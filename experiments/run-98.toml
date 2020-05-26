@@ -1,0 +1,29 @@
+[experiment]
+name = "run-98"
+vocabulary = "vocabulary"
+dataframe = "articles"
+dataset_class_name = "ArticlesDataset"
+optimizer_class_name = "Adam"
+discriminator_optimizer_class_name = "Adam"
+batch_size = 8
+device = "cuda"
+
+[experiment.model_args]
+hidden_size = 1024
+input_size = 300
+num_layers = 6
+num_heads = 10
+dropout_rate = 0.1
+dim_feedforward_transformer = 2024
+encoder_pool = "first"
+
+[experiment.discriminator_args]
+input_size = 1024
+hidden_size = 1024
+
+[experiment.optimizer_args]
+lr = 1e-5
+
+[experiment.discriminator_optimizer_args]
+lr = 1e-4
+

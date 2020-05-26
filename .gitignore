@@ -1,0 +1,9 @@
+data
+.ipynb_checkpoints
+tmp/
+runs
+.hypothesis/
+*.pyc
+__pycache__/
+*.py[cod]
+checkpoints/
