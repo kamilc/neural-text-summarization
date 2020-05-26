@@ -23,6 +23,10 @@ class MergeBatch(object):
             sample['word_embeddings']
         ).to(self.device)
 
+        sample['clean_word_embeddings'] = self.stack_vectors(
+            sample['clean_word_embeddings']
+        ).to(self.device)
+
         sample['mode'] = torch.tensor(
             sample['mode']
         ).to(self.device)

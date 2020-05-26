@@ -175,6 +175,7 @@ class BaseTrainer:
 
             logits, state = self.model(
                 batch.word_embeddings.to(self.device),
+                batch.clean_word_embeddings.to(self.device),
                 batch.lengths.to(self.device),
                 batch.mode.to(self.device)
             )
@@ -203,7 +204,6 @@ class BaseTrainer:
 
             model_loss = torch.tensor(0).cuda()
 
-            #import pdb; pdb.set_trace()
             if logits.shape[0:2] == classes.shape:
                 model_loss = F.cross_entropy(
                     logits.reshape(-1, logits.shape[2]).to(self.device),

@@ -27,8 +27,18 @@ class WordsToVectors(object):
             axis=1
         )
 
+        sample['clean_doc'] = sample.apply(
+            lambda row: self.to_document(row['orig_text']),
+            axis=1
+        )
+
         sample['word_embeddings'] = sample.apply(
             lambda row: self.document_embeddings(row['doc'], row['mode']),
+            axis=1
+        )
+
+        sample['clean_word_embeddings'] = sample.apply(
+            lambda row: self.document_embeddings(row['clean_doc'], row['mode']),
             axis=1
         )
 

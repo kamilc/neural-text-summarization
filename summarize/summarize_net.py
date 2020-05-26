@@ -229,11 +229,11 @@ class SummarizeNet(NNModel):
 
       return embeddings
 
-    def forward(self, embeddings, lengths, modes):
+    def forward(self, embeddings, clean_embeddings, lengths, modes):
         noisy_embeddings = self.mask_dropout(embeddings, lengths)
 
         encoded = self.encode(noisy_embeddings[:, 1:, :], lengths-1)
-        decoded = self.decode(embeddings, encoded, lengths, modes)
+        decoded = self.decode(clean_embeddings, encoded, lengths, modes)
 
         return (
             decoded,
