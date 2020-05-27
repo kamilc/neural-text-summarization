@@ -26,6 +26,7 @@ class SummarizeNet(NNModel):
         self.input_size = input_size
         self.vocabulary_size = vocabulary_size
         self.encoder_pool = encoder_pool
+        self.dropout_rate = dropout_rate
 
         self.pos_encoder = PositionalEncoding(input_size).to(self.device)
 
@@ -224,8 +225,7 @@ class SummarizeNet(NNModel):
           mask = mask < (lengths + 1).unsqueeze(dim=1).expand(batch_size, max_len)
           mask[:, 0] = False
 
-          # TODO: use dropout parameter
-          embeddings[mask] = F.dropout(embeddings[mask], p=0.25, training=self.training)
+          embeddings[mask] = F.dropout(embeddings[mask], p=self.dropout_rate, training=self.training)
 
       return embeddings
 
