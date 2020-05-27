@@ -31,7 +31,7 @@ class RocstoriesDataset(Dataset):
         )
 
     def get_clean_text(self, row):
-        return get_text(row, False)
+        return self.get_text(row, False)
 
     def get_text(self, row, should_shuffle=None):
         if should_shuffle is None:
