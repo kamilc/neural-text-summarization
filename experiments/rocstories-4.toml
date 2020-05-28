@@ -1,5 +1,5 @@
 [experiment]
-name = "rocstories-3"
+name = "rocstories-4"
 vocabulary = "roc_vocabulary"
 dataframe = "rocstories"
 dataset_class_name = "RocstoriesDataset"
